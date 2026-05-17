@@ -1,6 +1,6 @@
 package me.mmtr.xwarehouse.controller;
 
-import me.mmtr.xwarehouse.model.UserDTO;
+import me.mmtr.xwarehouse.model.dto.UserDTO;
 import me.mmtr.xwarehouse.service.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

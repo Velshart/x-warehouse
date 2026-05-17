@@ -1,4 +1,4 @@
-package me.mmtr.xwarehouse.model;
+package me.mmtr.xwarehouse.model.dto;
 
 public class UserDTO {
     private String username;
