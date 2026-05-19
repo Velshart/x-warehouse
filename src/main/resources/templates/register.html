@@ -1,34 +1,85 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
-    <title>Sign up | x-warehouse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rejestracja | x-warehouse</title>
+    <link th:href="@{/css/main.css}" rel="stylesheet" />
 </head>
-<body>
-<h2>Sign up</h2>
 
-<div th:if="${error}" th:text="${error}"></div>
+<body class="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-slate-900 antialiased">
 
-<form action="/register" method="post">
-    <div>
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
+<div class="max-w-md w-full space-y-8 bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700">
+
+    <div class="text-center">
+        <div class="mx-auto h-12 w-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+            <svg class="h-6 w-6 text-slate-950" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+            </svg>
+        </div>
+        <h2 class="mt-6 text-center text-3xl font-extrabold tracking-tight text-white">
+            Utwórz konto
+        </h2>
+        <p class="mt-2 text-sm text-slate-400">
+            Dołącz do systemu x-warehouse
+        </p>
     </div>
 
-    <div>
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+    <div th:if="${error != null}"
+         class="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-xl text-sm flex items-center space-x-2 animate-pulse">
+        <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span th:text="${error}">Błąd podczas rejestracji</span>
     </div>
 
-    <div>
-        <label for="confirmPassword">Confirm Password</label>
-        <input type="password" id="confirmPassword" name="confirmPassword" required>
-    </div>
+    <form class="mt-6 space-y-5" action="/register" method="post">
 
-    <button type="submit">Register</button>
-</form>
+        <div class="space-y-4">
+            <div>
+                <label for="username" class="block text-sm font-medium text-slate-300 mb-1">
+                    Nazwa użytkownika
+                </label>
+                <input id="username" name="username" type="text" required
+                       class="appearance-none block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 sm:text-sm"
+                       placeholder="np. j.kowalski">
+            </div>
 
-<p>Already have an account? <a href="/login">Sign in</a></p>
+            <div>
+                <label for="password" class="block text-sm font-medium text-slate-300 mb-1">
+                    Hasło
+                </label>
+                <input id="password" name="password" type="password" required
+                       class="appearance-none block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 sm:text-sm"
+                       placeholder="••••••••">
+            </div>
+
+            <div>
+                <label for="confirmPassword" class="block text-sm font-medium text-slate-300 mb-1">
+                    Potwierdź hasło
+                </label>
+                <input id="confirmPassword" name="confirmPassword" type="password" required
+                       class="appearance-none block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 sm:text-sm"
+                       placeholder="••••••••">
+            </div>
+        </div>
+
+        <div>
+            <button type="submit"
+                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-slate-950 bg-amber-500 hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-amber-500 transition duration-200 shadow-lg shadow-amber-500/20">
+                Zarejestruj się
+            </button>
+        </div>
+    </form>
+
+    <p class="mt-4 text-center text-sm text-slate-400">
+        Masz już konto?
+        <a href="/login" class="font-medium text-amber-500 hover:text-amber-400 transition duration-200 underline underline-offset-4">
+            Zaloguj się
+        </a>
+    </p>
+
+</div>
 
 </body>
 </html>
