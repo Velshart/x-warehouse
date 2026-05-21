@@ -1,10 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | x-warehouse</title>
     <link th:href="@{/css/main.css}" rel="stylesheet" />
 </head>
-<body>
+<body class="min-h-screen bg-slate-900 text-slate-100 antialiased">
+
+<header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="h-9 w-9 rounded-lg bg-amber-500 flex items-center justify-center shadow-md shadow-amber-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5 text-slate-950">
+                    <path d="M19.006 3.705a.75.75 0 1 0-.512-1.41L6 6.838V3a.75.75 0 0 0-.75-.75h-1.5A.75.75 0 0 0 3 3v4.93l-1.006.365a.75.75 0 0 0 .512 1.41l16.5-6Z" />
+                    <path fill-rule="evenodd" d="M3.019 11.114 18 5.667v3.421l4.006 1.457a.75.75 0 1 1-.512 1.41l-.494-.18v8.475h.75a.75.75 0 0 1 0 1.5H2.25a.75.75 0 0 1 0-1.5H3v-9.129l.019-.007ZM18 20.25v-9.566l1.5.546v9.02H18Zm-9-6a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3a.75.75 0 0 0 .75-.75V15a.75.75 0 0 0-.75-.75H9Z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <span class="text-lg font-bold tracking-wider text-white">x-warehouse</span>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div class="text-right hidden sm:block">
+                <p class="text-sm font-medium text-slate-200" th:text="${currentUser.username}">User</p>
+                <p class="text-xs text-slate-500">Logged in</p>
+            </div>
+
+            <form action="/logout" method="post" class="inline">
+                <button type="submit" class="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition duration-200">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div class="mb-6 space-y-3">
+        <div th:if="${success != null}" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl text-sm flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            <span th:text="${success}">Operation was successful</span>
+        </div>
+        <div th:if="${error != null}" class="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm flex items-center space-x-2">
+            <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span th:text="${error}">An error occurred</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <div class="lg:col-span-2 space-y-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white tracking-tight">Your warehouses</h1>
+                <p class="text-sm text-slate-400 mt-1">Select a warehouse to proceed to inventory management.</p>
+            </div>
+
+            <div th:if="${#lists.isEmpty(warehouses)}" class="border-2 border-dashed border-slate-800 rounded-2xl p-12 text-center">
+                <svg class="mx-auto h-12 w-12 text-slate-600" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <h3 class="mt-4 text-sm font-medium text-slate-300">No warehouses</h3>
+                <p class="mt-1 text-sm text-slate-500">You don't have access to any warehouse yet.</p>
+            </div>
+
+            <div th:if="${!#lists.isEmpty(warehouses)}" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div th:each="w : ${warehouses}" class="bg-slate-800 border border-slate-700 hover:border-amber-500/50 p-5 rounded-xl shadow-md transition duration-200 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-start justify-between">
+                            <h3 class="text-lg font-bold text-white group-hover:text-amber-400 transition duration-150" th:text="${w.name}">Warehouse name</h3>
+
+                            <span th:if="${w.owner.id == currentUser.id}" class="px-2 py-1 text-[10px] font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-md">
+                                    Owner
+                                </span>
+                            <span th:if="${w.owner.id != currentUser.id}" class="px-2 py-1 text-[10px] font-semibold bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-md">
+                                    Access
+                                </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2 flex items-center">
+                            <svg class="h-3.5 w-3.5 mr-1" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Created at: <span class="ml-1" th:text="${#temporals.format(w.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2026</span>
+                        </p>
+                    </div>
+
+                    <div class="mt-6 flex items-center space-x-2">
+                        <a th:href="@{/warehouse/{id}(id=${w.id})}" class="flex-1 inline-flex justify-center items-center py-2 px-4 bg-slate-900 hover:bg-slate-700 border border-slate-700 text-sm font-medium text-slate-200 rounded-lg transition duration-150">
+                            Manage
+                            <svg class="h-4 w-4 ml-1.5" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </a>
+
+                        <form th:if="${w.owner.id == currentUser.id}"
+                              th:action="@{/dashboard/warehouse/delete}"
+                              method="post"
+                              class="inline"
+                              th:onsubmit="return confirm('Are you sure? This operation is irreversible and all data will be lost.')">
+
+                            <input type="hidden" name="warehouseId" th:value="${w.id}" />
+
+                            <button type="submit" class="p-2 text-slate-500 hover:text-red-400 border border-transparent hover:border-red-500/20 hover:bg-red-500/10 rounded-lg transition duration-150" title="Delete warehouse">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
+                <h2 class="text-lg font-bold text-white mb-1">New warehouse</h2>
+
+                <form th:action="@{/dashboard/warehouse/create}" method="post" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-xs font-medium text-slate-400 mb-1">
+                            Warehouse name
+                        </label>
+                        <input id="name" name="name" type="text" required
+                               class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 text-sm"
+                               placeholder="example: Main Warehouse">
+                    </div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-semibold rounded-lg text-slate-950 bg-amber-500 hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-amber-500 transition duration-200 shadow-md shadow-amber-500/10">
+                        Create new warehouse
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</main>
+
 </body>
 </html>

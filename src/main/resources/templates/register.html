@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rejestracja | x-warehouse</title>
+    <title>Register | x-warehouse</title>
     <link th:href="@{/css/main.css}" rel="stylesheet" />
 </head>
 
@@ -19,10 +19,10 @@
             </svg>
         </div>
         <h2 class="mt-6 text-center text-3xl font-extrabold tracking-tight text-white">
-            Utwórz konto
+            Create an account
         </h2>
         <p class="mt-2 text-sm text-slate-400">
-            Dołącz do systemu x-warehouse
+            Join x-warehouse now
         </p>
     </div>
 
@@ -31,7 +31,7 @@
         <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
         </svg>
-        <span th:text="${error}">Błąd podczas rejestracji</span>
+        <span th:text="${error}">Registration error</span>
     </div>
 
     <form class="mt-6 space-y-5" action="/register" method="post">
@@ -39,16 +39,16 @@
         <div class="space-y-4">
             <div>
                 <label for="username" class="block text-sm font-medium text-slate-300 mb-1">
-                    Nazwa użytkownika
+                    Username
                 </label>
                 <input id="username" name="username" type="text" required
                        class="appearance-none block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 sm:text-sm"
-                       placeholder="nazwa użytkownika">
+                       placeholder="example: jsmith">
             </div>
 
             <div>
                 <label for="password" class="block text-sm font-medium text-slate-300 mb-1">
-                    Hasło
+                    Password
                 </label>
                 <input id="password" name="password" type="password" required
                        class="appearance-none block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 sm:text-sm"
@@ -57,7 +57,7 @@
 
             <div>
                 <label for="confirmPassword" class="block text-sm font-medium text-slate-300 mb-1">
-                    Potwierdź hasło
+                    Confirm password
                 </label>
                 <input id="confirmPassword" name="confirmPassword" type="password" required
                        class="appearance-none block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 sm:text-sm"
@@ -68,15 +68,15 @@
         <div>
             <button type="submit"
                     class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-slate-950 bg-amber-500 hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-amber-500 transition duration-200 shadow-lg shadow-amber-500/20">
-                Zarejestruj się
+                Register
             </button>
         </div>
     </form>
 
     <p class="mt-4 text-center text-sm text-slate-400">
-        Masz już konto?
+        Already have an account?
         <a href="/login" class="font-medium text-amber-500 hover:text-amber-400 transition duration-200 underline underline-offset-4">
-            Zaloguj się
+            Log in
         </a>
     </p>
 
