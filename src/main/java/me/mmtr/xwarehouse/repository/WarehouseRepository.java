@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface WarehouseRepository extends
@@ -20,4 +21,16 @@ public interface WarehouseRepository extends
                     " OR m.user.id = :userId"
     )
     List<Warehouse> findAllAccessibleByUserId(@Param("userId") Long userId);
+
+
+    @Query(
+            "SELECT w FROM Warehouse w " +
+                    "LEFT JOIN WarehouseMember wm ON w.id = wm.warehouse.id" +
+                    " WHERE w.id = :warehouseId" +
+                    " AND (w.owner.id = :userId OR wm.user.id = :userId)"
+    )
+    Optional<Warehouse> findWarehouseByIdAndUserId(
+            @Param("warehouseId") Long warehouseId,
+            @Param("userId") Long userId
+    );
 }

@@ -4,14 +4,17 @@ import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
 import me.mmtr.xwarehouse.model.WarehouseMember;
 import me.mmtr.xwarehouse.model.enums.WarehouseRole;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 public class WarehouseRepositoryIntegrationTests {
@@ -22,39 +25,105 @@ public class WarehouseRepositoryIntegrationTests {
     @Autowired
     private WarehouseRepository warehouseRepository;
 
-    @Test
-    void verifyIfAllAccessibleWarehousesForGivenUserAreReturned() {
-        User firstUser = new User("owner", "password");
-        User secondUser = new User("member", "password");
-        User thirdUser = new User("other", "password");
+    private User owner;
+    private User member;
+    private User stranger;
+    private Warehouse warehouse;
 
-        entityManager.persist(firstUser);
-        entityManager.persist(secondUser);
-        entityManager.persist(thirdUser);
+    @BeforeEach
+    void setUp() {
+        owner = new User("owner", "password");
+        member = new User("member", "password");
+        stranger = new User("stranger", "password");
 
-        Warehouse warehouse1 = new Warehouse("Warehouse 1", firstUser);
-        entityManager.persist(warehouse1);
+        entityManager.persist(owner);
+        entityManager.persist(member);
+        entityManager.persist(stranger);
 
-        Warehouse warehouse2 = new Warehouse("Warehouse 2", thirdUser);
-        entityManager.persist(warehouse2);
+        warehouse = new Warehouse("Main Warehouse", owner);
+        entityManager.persist(warehouse);
 
-        WarehouseMember membership =
-                new WarehouseMember(warehouse2, secondUser, WarehouseRole.VIEWER);
+        WarehouseMember membership = new WarehouseMember(warehouse, member, WarehouseRole.VIEWER);
         entityManager.persist(membership);
 
-        Warehouse warehouse3 = new Warehouse("Warehouse 3", thirdUser);
-        entityManager.persist(warehouse3);
+        entityManager.flush();
+    }
 
+    @Test
+    void verifyIfAllAccessibleWarehousesForGivenUserAreReturned() {
+        Warehouse otherWarehouse =
+                new Warehouse("Other Warehouse", stranger);
+
+        entityManager.persist(otherWarehouse);
         entityManager.flush();
 
-        List<Warehouse> firstUserWarehouses =
-                warehouseRepository.findAllAccessibleByUserId(firstUser.getId());
+        List<Warehouse> ownerWarehouses =
+                warehouseRepository.findAllAccessibleByUserId(owner.getId());
 
-        List<Warehouse> secondUserWarehouses =
-                warehouseRepository.findAllAccessibleByUserId(secondUser.getId());
+        List<Warehouse> memberWarehouses =
+                warehouseRepository.findAllAccessibleByUserId(member.getId());
 
-        assertEquals(1, firstUserWarehouses.size());
+        assertEquals(1, ownerWarehouses.size());
+        assertEquals(
+                "Main Warehouse",
+                ownerWarehouses.getFirst().getName()
+        );
 
-        assertEquals(1, secondUserWarehouses.size());
+        assertEquals(1, memberWarehouses.size());
+        assertEquals(
+                "Main Warehouse",
+                memberWarehouses.getFirst().getName()
+        );
+    }
+
+    @Nested
+    class FindWarehouseByIdAndUserIdTests {
+
+        @Test
+        void verifyIfWarehouseWasReturnedWhenUserIsAnOwner() {
+            Optional<Warehouse> foundWarehouse = warehouseRepository
+                    .findWarehouseByIdAndUserId(
+                            warehouse.getId(),
+                            owner.getId()
+                    );
+
+            assertTrue(foundWarehouse.isPresent());
+            assertEquals(warehouse.getId(), foundWarehouse.get().getId());
+            assertEquals(
+                    "Main Warehouse",
+                    foundWarehouse.get().getName()
+            );
+        }
+
+        @Test
+        void verifyIfWarehouseWasReturnedWhenUserIsAMember() {
+            Optional<Warehouse> foundWarehouse = warehouseRepository
+                    .findWarehouseByIdAndUserId(
+                            warehouse.getId(),
+                            member.getId()
+                    );
+
+            assertTrue(foundWarehouse.isPresent());
+            assertEquals(warehouse.getId(), foundWarehouse.get().getId());
+        }
+
+        @Test
+        void verifyIfEmptyOptionalIsReturnedWhenUserHasNoAccessToWarehouse() {
+            Optional<Warehouse> foundWarehouse = warehouseRepository
+                    .findWarehouseByIdAndUserId(
+                            warehouse.getId(),
+                            stranger.getId()
+                    );
+
+            assertTrue(foundWarehouse.isEmpty());
+        }
+
+        @Test
+        void verifyIfEmptyOptionalIsReturnedWhenWarehouseDoesNotExist() {
+            Optional<Warehouse> foundWarehouse = warehouseRepository
+                    .findWarehouseByIdAndUserId(999L, owner.getId());
+
+            assertTrue(foundWarehouse.isEmpty());
+        }
     }
 }

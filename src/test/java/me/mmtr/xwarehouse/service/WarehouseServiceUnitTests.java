@@ -1,5 +1,8 @@
 package me.mmtr.xwarehouse.service;
 
+import me.mmtr.xwarehouse.exception.BusinessValidationException;
+import me.mmtr.xwarehouse.exception.ResourceAccessException;
+import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
 import me.mmtr.xwarehouse.model.WarehouseMember;
@@ -132,8 +135,8 @@ public class WarehouseServiceUnitTests {
             when(warehouseRepository.findById(warehouse.getId()))
                     .thenReturn(Optional.empty());
 
-            IllegalArgumentException exception =
-                    assertThrows(IllegalArgumentException.class, () ->
+            ResourceNotFoundException exception =
+                    assertThrows(ResourceNotFoundException.class, () ->
                             warehouseService.addMember(
                                     warehouse.getId(),
                                     regularUser.getUsername(),
@@ -156,8 +159,8 @@ public class WarehouseServiceUnitTests {
             when(warehouseRepository.findById(warehouse.getId()))
                     .thenReturn(Optional.of(warehouse));
 
-            IllegalArgumentException exception =
-                    assertThrows(IllegalArgumentException.class, () ->
+            ResourceAccessException exception =
+                    assertThrows(ResourceAccessException.class, () ->
                             warehouseService.addMember(
                                     warehouse.getId(),
                                     regularUser.getUsername(),
@@ -180,8 +183,8 @@ public class WarehouseServiceUnitTests {
             when(userRepository.findByUsername("nonExistingUser"))
                     .thenReturn(Optional.empty());
 
-            IllegalArgumentException ex =
-                    assertThrows(IllegalArgumentException.class, () ->
+            ResourceNotFoundException ex =
+                    assertThrows(ResourceNotFoundException.class, () ->
                             warehouseService.addMember(
                                     warehouse.getId(),
                                     "nonExistingUser",
@@ -204,8 +207,8 @@ public class WarehouseServiceUnitTests {
             when(userRepository.findByUsername(owner.getUsername()))
                     .thenReturn(Optional.of(owner));
 
-            IllegalArgumentException ex =
-                    assertThrows(IllegalArgumentException.class, () ->
+            BusinessValidationException ex =
+                    assertThrows(BusinessValidationException.class, () ->
                             warehouseService.addMember(
                                     warehouse.getId(),
                                     owner.getUsername(),
@@ -239,8 +242,8 @@ public class WarehouseServiceUnitTests {
                     regularUser.getId())
             ).thenReturn(Optional.of(member));
 
-            IllegalArgumentException ex =
-                    assertThrows(IllegalArgumentException.class, () ->
+            BusinessValidationException ex =
+                    assertThrows(BusinessValidationException.class, () ->
                             warehouseService.addMember(
                                     warehouse.getId(),
                                     regularUser.getUsername(),
@@ -253,6 +256,264 @@ public class WarehouseServiceUnitTests {
                             " of this warehouse",
                     ex.getMessage()
             );
+        }
+    }
+
+    @Nested
+    class RemoveMemberTests {
+        @Test
+        void verifyIfMemberWasRemovedSuccessfullyByOwner() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            WarehouseMember member = new WarehouseMember(
+                    warehouse,
+                    regularUser,
+                    WarehouseRole.VIEWER
+            );
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    regularUser.getId()
+            )).thenReturn(Optional.of(member));
+
+            assertDoesNotThrow(() -> warehouseService.removeMember(warehouse.getId(),
+                    regularUser.getId(), owner));
+
+            verify(
+                    warehouseMemberRepository,
+                    times(1)
+            ).delete(member);
+        }
+
+        @Test
+        void verifyIfUserCanRemoveThemself() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            WarehouseMember member = new WarehouseMember(
+                    warehouse,
+                    regularUser,
+                    WarehouseRole.VIEWER
+            );
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    regularUser.getId()
+            )).thenReturn(Optional.of(member));
+
+            assertDoesNotThrow(() -> warehouseService.removeMember(
+                    warehouse.getId(),
+                    regularUser.getId(),
+                    regularUser
+            ));
+
+            verify(
+                    warehouseMemberRepository,
+                    times(1)
+            ).delete(member);
+        }
+
+        @Test
+        void verifyIfAdminCanRemoveViewer() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            User admin = new User();
+            admin.setId(4L);
+            admin.setUsername("adminUser");
+
+            WarehouseMember adminMember = new WarehouseMember(
+                    warehouse,
+                    admin,
+                    WarehouseRole.ADMIN
+            );
+
+            WarehouseMember regularMember = new WarehouseMember(
+                    warehouse, regularUser, WarehouseRole.VIEWER
+            );
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    admin.getId())
+            ).thenReturn(Optional.of(adminMember));
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    regularUser.getId())
+            ).thenReturn(Optional.of(regularMember));
+
+            assertDoesNotThrow(() -> warehouseService.removeMember(
+                    warehouse.getId(),
+                    regularUser.getId(),
+                    admin
+            ));
+
+            verify(
+                    warehouseMemberRepository,
+                    times(1)
+            ).delete(regularMember);
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenWarehouseDoesNotExist() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.empty());
+
+            ResourceNotFoundException exception =
+                    assertThrows(ResourceNotFoundException.class,
+                            () -> warehouseService.removeMember(
+                                    warehouse.getId(),
+                                    regularUser.getId(),
+                                    owner
+                            )
+                    );
+
+            assertEquals(
+                    "Warehouse with id 3 does not exist",
+                    exception.getMessage());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenTargetUserIsAnOwner() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            BusinessValidationException exception =
+                    assertThrows(BusinessValidationException.class,
+                            () -> warehouseService.removeMember(
+                                    warehouse.getId(),
+                                    owner.getId(),
+                                    owner
+                            )
+                    );
+
+            assertEquals(
+                    "An owner cannot be removed from members list.",
+                    exception.getMessage());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenAdminTriesToRemoveAnotherAdmin() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            User currentAdmin = new User();
+            currentAdmin.setId(4L);
+
+            User targetAdmin = new User();
+            targetAdmin.setId(5L);
+
+            WarehouseMember currentAdminMember = new WarehouseMember(
+                    warehouse,
+                    currentAdmin,
+                    WarehouseRole.ADMIN
+            );
+
+            WarehouseMember targetAdminMember = new WarehouseMember(
+                    warehouse,
+                    targetAdmin,
+                    WarehouseRole.ADMIN
+            );
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    currentAdmin.getId()
+            )).thenReturn(Optional.of(currentAdminMember));
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    targetAdmin.getId()
+            )).thenReturn(Optional.of(targetAdminMember));
+
+            ResourceAccessException ex = assertThrows(ResourceAccessException.class,
+                    () -> warehouseService.removeMember(
+                            warehouse.getId(),
+                            targetAdmin.getId(),
+                            currentAdmin
+                    )
+            );
+
+            assertEquals(
+                    "Current user is not permitted to perform this operation",
+                    ex.getMessage()
+            );
+
+            verify(warehouseMemberRepository, never()).delete(any());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenViewerTriesToRemoveAnotherUser() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            User currentViewer = new User();
+            currentViewer.setId(4L);
+
+            User targetViewer = new User();
+            targetViewer.setId(5L);
+
+            WarehouseMember currentViewerMember = new WarehouseMember(
+                    warehouse,
+                    currentViewer,
+                    WarehouseRole.VIEWER
+            );
+
+            WarehouseMember targetViewerMember = new WarehouseMember(
+                    warehouse,
+                    targetViewer,
+                    WarehouseRole.VIEWER
+            );
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    currentViewer.getId()
+            )).thenReturn(Optional.of(currentViewerMember));
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    targetViewer.getId()
+            )).thenReturn(Optional.of(targetViewerMember));
+
+            ResourceAccessException ex = assertThrows(ResourceAccessException.class,
+                    () -> warehouseService.removeMember(
+                            warehouse.getId(),
+                            targetViewer.getId(),
+                            currentViewer
+                    )
+            );
+
+            assertEquals(
+                    "Current user is not permitted to perform this operation",
+                    ex.getMessage());
+            verify(warehouseMemberRepository, never()).delete(any());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenTargetUserIsNotAMemberOfTheWarehouse() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            when(warehouseMemberRepository.findByWarehouseIdAndUserId(
+                    warehouse.getId(),
+                    regularUser.getId())
+            ).thenReturn(Optional.empty());
+
+            ResourceNotFoundException ex =
+                    assertThrows(ResourceNotFoundException.class, () ->
+                            warehouseService.removeMember(
+                                    warehouse.getId(),
+                                    regularUser.getId(),
+                                    owner
+                            )
+                    );
+
+            assertEquals(
+                    "This user is not a member of this warehouse",
+                    ex.getMessage()
+            );
+
+            verify(warehouseMemberRepository, never()).delete(any());
         }
     }
 
@@ -275,8 +536,8 @@ public class WarehouseServiceUnitTests {
             when(warehouseRepository.findById(warehouse.getId()))
                     .thenReturn(Optional.empty());
 
-            IllegalArgumentException ex =
-                    assertThrows(IllegalArgumentException.class, () ->
+            ResourceNotFoundException ex =
+                    assertThrows(ResourceNotFoundException.class, () ->
                             warehouseService.deleteWarehouse(warehouse.getId(), owner));
 
             assertEquals(
@@ -290,8 +551,8 @@ public class WarehouseServiceUnitTests {
             when(warehouseRepository.findById(warehouse.getId()))
                     .thenReturn(Optional.of(warehouse));
 
-            IllegalStateException ex =
-                    assertThrows(IllegalStateException.class, () ->
+            ResourceAccessException ex =
+                    assertThrows(ResourceAccessException.class, () ->
                             warehouseService.deleteWarehouse(
                                     warehouse.getId(),
                                     regularUser
