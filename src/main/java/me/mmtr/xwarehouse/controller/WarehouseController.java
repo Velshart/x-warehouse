@@ -62,8 +62,7 @@ public class WarehouseController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            WarehouseRole memberRole = role.equals("ADMIN")
-                    ? WarehouseRole.ADMIN : WarehouseRole.VIEWER;
+            WarehouseRole memberRole = WarehouseRole.valueOf(role.toUpperCase());
 
             warehouseService.addMember(warehouseId, username, memberRole, currentUser);
 
