@@ -1,6 +1,7 @@
 package me.mmtr.xwarehouse.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ public class Warehouse {
     private Long id;
 
     @Column(nullable = false, length = 100)
+    @Size(min = 1, max = 100, message = "Warehouse name cannot exceed 100 characters")
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,6 +28,13 @@ public class Warehouse {
             orphanRemoval = true
     )
     private List<WarehouseMember> members = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "warehouse",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<WarehouseZone> zones = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -73,6 +82,14 @@ public class Warehouse {
 
     public void setMembers(List<WarehouseMember> members) {
         this.members = members;
+    }
+
+    public List<WarehouseZone> getZones() {
+        return zones;
+    }
+
+    public void setZones(List<WarehouseZone> zones) {
+        this.zones = zones;
     }
 
     public LocalDateTime getCreatedAt() {
