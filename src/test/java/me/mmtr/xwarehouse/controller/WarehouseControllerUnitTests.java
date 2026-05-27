@@ -84,6 +84,96 @@ public class WarehouseControllerUnitTests {
     }
 
     @Nested
+    class CreateWarehouseTests {
+        @Test
+        void verifyIfWarehouseIsCorrectlyCreatedAndRedirectionOccurs() throws Exception {
+            mockMvc.perform(post("/warehouse/create")
+                            .with(user(currentUser)).param(
+                                    "name", " Warehouse 1 ")
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/dashboard"))
+                    .andExpect(flash().attribute(
+                            "success",
+                            "Warehouse created successfully"
+                    ));
+
+            verify(warehouseService, times(1))
+                    .createWarehouse("Warehouse 1", currentUser);
+        }
+
+        @Test
+        void verifyIfErrorOccursWhenNameIsEmpty() throws Exception {
+            mockMvc.perform(post("/warehouse/create")
+                            .with(user(currentUser))
+                            .with(csrf())
+                            .param("name", "    "))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/dashboard"))
+                    .andExpect(flash().attribute(
+                            "error",
+                            "Name cannot be empty")
+                    );
+        }
+
+        @Test
+        void verifyIfErrorParamIsSetWhenExceptionWasThrown() throws Exception {
+            doThrow(new RuntimeException("Test exception")).when(warehouseService)
+                    .createWarehouse(anyString(), any(User.class));
+
+            mockMvc.perform(post("/warehouse/create")
+                            .param("name", "Warehouse 1")
+                            .with(user(currentUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/dashboard"))
+                    .andExpect(flash().attribute(
+                            "error",
+                            "Test exception")
+                    );
+        }
+    }
+
+    @Nested
+    class DeleteWarehouseTests {
+        @Test
+        void verifyIfWarehouseIsCorrectlyDeletedAndRedirectionOccurs() throws Exception {
+            mockMvc.perform(post("/warehouse/delete")
+                            .param("warehouseId", "1")
+                            .with(user(currentUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/dashboard"))
+                    .andExpect(flash().attribute(
+                            "success",
+                            "Warehouse deleted successfully")
+                    );
+
+            verify(
+                    warehouseService,
+                    times(1)
+            ).deleteWarehouse(1L, currentUser);
+        }
+
+        @Test
+        void verifyIfErrorParamIsSetWhenExceptionIsThrown() throws Exception {
+            doThrow(new RuntimeException("Test exception"))
+                    .when(warehouseService).deleteWarehouse(1L, currentUser);
+
+            mockMvc.perform(post("/warehouse/delete")
+                            .param("warehouseId", "1")
+                            .with(user(currentUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/dashboard"))
+                    .andExpect(flash().attribute(
+                            "error",
+                            "Test exception")
+                    );
+        }
+    }
+
+    @Nested
     class AddMemberTests {
         @Test
         void verifyIfMemberIsAddedSuccessfullyAndRedirectionOccurs() throws Exception {
