@@ -53,6 +53,50 @@ public class WarehouseController {
         }
     }
 
+    @PostMapping("/create")
+    public String createWarehouse(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam("name") String name,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            String warehouseName = name.trim();
+
+            if (warehouseName.isEmpty()) {
+                throw new IllegalArgumentException("Name cannot be empty");
+            }
+
+            warehouseService.createWarehouse(warehouseName, currentUser);
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Warehouse created successfully"
+            );
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/dashboard";
+    }
+
+    @PostMapping("/delete")
+    public String deleteWarehouse(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam("warehouseId") Long warehouseId,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            warehouseService.deleteWarehouse(warehouseId, currentUser);
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Warehouse deleted successfully"
+            );
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/dashboard";
+    }
+
     @PostMapping("/{id}/add-member")
     public String addMember(
             @AuthenticationPrincipal User currentUser,
