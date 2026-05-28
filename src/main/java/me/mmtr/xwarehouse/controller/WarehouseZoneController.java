@@ -34,7 +34,10 @@ public class WarehouseZoneController {
             Model model
     ) {
         try {
-            WarehouseZone zone = zoneService.getZoneByIdAndUser(warehouseId, zoneId, currentUser);
+            WarehouseZone zone = zoneService.getZoneByIdAndUser(
+                    warehouseId, zoneId, currentUser
+            );
+
             Warehouse warehouse = zone.getWarehouse();
 
             boolean isOwner = warehouse.getOwner().getId().equals(currentUser.getId());
