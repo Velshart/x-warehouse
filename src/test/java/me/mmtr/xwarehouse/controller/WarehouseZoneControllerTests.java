@@ -15,8 +15,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -60,9 +58,9 @@ public class WarehouseZoneControllerTests {
         @Test
         void verifyIfZoneViewIsReturnedCorrectly() throws Exception {
             when(zoneService.getZoneByIdAndUser(
-                    eq(mockWarehouse.getId()),
-                    eq(mockZone.getId()),
-                    any(User.class)
+                    mockWarehouse.getId(),
+                    mockZone.getId(),
+                    mockUser
             )).thenReturn(mockZone);
 
             mockMvc.perform(get("/warehouse/2/zone/3").with(user(mockUser)))
@@ -82,16 +80,16 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .getZoneByIdAndUser(
-                            eq(mockWarehouse.getId()),
-                            eq(mockZone.getId()),
-                            any(User.class)
+                            mockWarehouse.getId(),
+                            mockZone.getId(),
+                            mockUser
                     );
         }
 
         @Test
         void verifyIfRedirectionOccursWhenAnExceptionIsThrown() throws Exception {
             when(zoneService.getZoneByIdAndUser(
-                    eq(mockWarehouse.getId()), eq(mockZone.getId()), any(User.class)
+                    mockWarehouse.getId(), mockZone.getId(), mockUser
             )).thenThrow(new ResourceNotFoundException(
                     "Requested zone does not belong to the specified warehouse"
             ));
@@ -130,9 +128,9 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .addZone(
-                            eq(mockWarehouse.getId()),
-                            eq("Zone B"),
-                            eq(mockUser)
+                            mockWarehouse.getId(),
+                            "Zone B",
+                            mockUser
                     );
         }
 
@@ -141,9 +139,9 @@ public class WarehouseZoneControllerTests {
             doThrow(new ResourceAccessException("You are not permitted to perform" +
                     " modifications in this warehouse"))
                     .when(zoneService).addZone(
-                            eq(mockWarehouse.getId()),
-                            eq("Zone B"),
-                            any(User.class)
+                            mockWarehouse.getId(),
+                            "Zone B",
+                            mockUser
                     );
 
             mockMvc.perform(post("/warehouse/2/add-zone")
@@ -165,9 +163,9 @@ public class WarehouseZoneControllerTests {
         @Test
         void verifyIfRedirectIonOccursWithSuccessFlashAttribute() throws Exception {
             doNothing().when(zoneService).deleteZone(
-                    eq(mockWarehouse.getId()),
-                    eq(mockZone.getId()),
-                    any(User.class)
+                    mockWarehouse.getId(),
+                    mockZone.getId(),
+                    mockUser
             );
 
             mockMvc.perform(post("/warehouse/2/delete-zone")
@@ -183,9 +181,9 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .deleteZone(
-                            eq(mockWarehouse.getId()),
-                            eq(mockZone.getId()),
-                            any(User.class)
+                            mockWarehouse.getId(),
+                            mockZone.getId(),
+                            mockUser
                     );
         }
 
@@ -193,9 +191,9 @@ public class WarehouseZoneControllerTests {
         void verifyIfRedirectionWithErrorFlashAttributeOccursWhenAnExceptionIsThrown() throws Exception {
             doThrow(new ResourceNotFoundException("Zone not found"))
                     .when(zoneService).deleteZone(
-                            eq(mockWarehouse.getId()),
-                            eq(mockZone.getId()),
-                            any(User.class)
+                            mockWarehouse.getId(),
+                            mockZone.getId(),
+                            mockUser
                     );
 
             mockMvc.perform(post("/warehouse/2/delete-zone")
@@ -216,12 +214,12 @@ public class WarehouseZoneControllerTests {
         @Test
         void verifyIfRedirectionOccursWithSuccessFlashAttribute() throws Exception {
             doNothing().when(zoneService).addItemToZone(
-                    eq(mockWarehouse.getId()),
-                    eq(mockZone.getId()),
-                    eq("Item A"),
-                    eq("TEST-01"),
-                    eq(5L),
-                    any(User.class)
+                    mockWarehouse.getId(),
+                    mockZone.getId(),
+                    "Item A",
+                    "TEST-01",
+                    5L,
+                    mockUser
             );
 
             mockMvc.perform(post("/warehouse/2/zone/3/add-item")
@@ -239,12 +237,12 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .addItemToZone(
-                            eq(mockWarehouse.getId()),
-                            eq(mockZone.getId()),
-                            eq("Item A"),
-                            eq("TEST-01"),
-                            eq(5L),
-                            any(User.class)
+                            mockWarehouse.getId(),
+                            mockZone.getId(),
+                            "Item A",
+                            "TEST-01",
+                            5L,
+                            mockUser
                     );
         }
 
@@ -253,12 +251,12 @@ public class WarehouseZoneControllerTests {
             doThrow(new ResourceAccessException(
                     "You are not permitted to perform modifications in this warehouse"
             )).when(zoneService).addItemToZone(
-                    eq(mockWarehouse.getId()),
-                    eq(mockZone.getId()),
-                    eq("Item A"),
-                    eq("TEST-01"),
-                    eq(5L),
-                    any(User.class)
+                    mockWarehouse.getId(),
+                    mockZone.getId(),
+                    "Item A",
+                    "TEST-01",
+                    5L,
+                    mockUser
             );
 
             mockMvc.perform(post("/warehouse/2/zone/3/add-item")
@@ -282,7 +280,7 @@ public class WarehouseZoneControllerTests {
         @Test
         void verifyIfRedirectionOccursWithSuccessFlashAttribute() throws Exception {
             doNothing().when(zoneService).removeItemFromZone(
-                    eq(mockWarehouse.getId()), eq(100L), any(User.class)
+                    mockWarehouse.getId(), 100L, mockUser
             );
 
             mockMvc.perform(post("/warehouse/2/zone/3/remove-item")
@@ -298,9 +296,9 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .removeItemFromZone(
-                            eq(mockWarehouse.getId()),
-                            eq(100L),
-                            any(User.class)
+                            mockWarehouse.getId(),
+                            100L,
+                            mockUser
                     );
         }
 
@@ -309,9 +307,9 @@ public class WarehouseZoneControllerTests {
             doThrow(new ResourceAccessException("You are not permitted to perform" +
                     " modifications in this warehouse"
             )).when(zoneService).removeItemFromZone(
-                    eq(mockWarehouse.getId()),
-                    eq(100L),
-                    any(User.class)
+                    mockWarehouse.getId(),
+                    100L,
+                    mockUser
             );
 
             mockMvc.perform(post("/warehouse/2/zone/3/remove-item")
