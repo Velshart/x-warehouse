@@ -12,7 +12,7 @@ public class WarehouseItem {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String sku;
 
     private Long quantity;

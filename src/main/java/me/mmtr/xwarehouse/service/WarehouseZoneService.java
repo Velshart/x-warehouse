@@ -109,7 +109,8 @@ public class WarehouseZoneService {
                                 )
                         );
 
-        Optional<WarehouseItem> warehouseItemOptional = itemRepository.findBySku(sku);
+        Optional<WarehouseItem> warehouseItemOptional =
+                itemRepository.findByWarehouseZoneWarehouseIdAndSku(warehouseId, sku);
 
         if (warehouseItemOptional.isPresent()) {
             WarehouseItem foundItem = warehouseItemOptional.get();

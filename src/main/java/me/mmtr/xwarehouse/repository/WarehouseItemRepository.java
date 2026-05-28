@@ -9,5 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface WarehouseItemRepository extends JpaRepository<@NonNull WarehouseItem, @NonNull Long> {
-    Optional<WarehouseItem> findBySku(String sku);
+    Optional<WarehouseItem> findByWarehouseZoneWarehouseIdAndSku(
+            Long warehouseId, String sku
+    );
 }
