@@ -1,5 +1,6 @@
 package me.mmtr.xwarehouse.controller;
 
+import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.dto.UserDTO;
 import me.mmtr.xwarehouse.service.UserService;
 import org.springframework.stereotype.Controller;
@@ -38,11 +39,11 @@ public class AuthenticationController {
             return "redirect:/register";
         }
 
-        boolean successfullyRegistered = userService.createUser(
+        User user = userService.createUser(
                 userDTO.getUsername(), userDTO.getPassword()
         );
 
-        if (!successfullyRegistered) {
+        if (user == null) {
             redirectAttributes.addFlashAttribute(
                     "error", "Username is already taken."
             );

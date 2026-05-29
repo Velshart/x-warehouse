@@ -16,18 +16,17 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public boolean createUser(String username, String password) {
+    public User createUser(String username, String password) {
         User databaseUser = userRepository.findByUsername(username).orElse(null);
         if (databaseUser != null) {
-            return false;
+            return null;
         }
 
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
 
-        userRepository.save(user);
-        return true;
+        return userRepository.save(user);
     }
 
 }

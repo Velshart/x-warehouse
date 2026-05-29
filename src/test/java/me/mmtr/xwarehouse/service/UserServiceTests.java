@@ -2,7 +2,6 @@ package me.mmtr.xwarehouse.service;
 
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.repository.UserRepository;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,8 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -33,9 +31,9 @@ public class UserServiceTests {
         String username = "user";
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(new User()));
 
-        boolean result = userService.createUser(username, "password");
+        User user = userService.createUser(username, "password");
 
-        assertFalse(result);
+        assertNull(user);
         verify(userRepository, never()).save(any());
     }
 
@@ -45,19 +43,20 @@ public class UserServiceTests {
         String rawPassword = "password";
         String encodedPassword = "encodedPassword";
 
-        when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocationOnMock ->
+                        invocationOnMock.getArgument(0)
+                );
+
+        when(userRepository.findByUsername(username))
+                .thenReturn(Optional.empty());
         when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
 
-        boolean result = userService.createUser(username, rawPassword);
+        User result = userService.createUser(username, rawPassword);
 
-        assertTrue(result);
+        assertNotNull(result);
 
-        verify(userRepository, times(1)).save(argThat(
-                user -> {
-                    if (!user.getUsername().equals(username)) return false;
-                    Assertions.assertNotNull(user.getPassword());
-                    return user.getPassword().equals(encodedPassword);
-                }
-        ));
+        assertEquals(username, result.getUsername());
+        assertEquals(encodedPassword, result.getPassword());
     }
 }
