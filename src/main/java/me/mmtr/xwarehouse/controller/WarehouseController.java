@@ -78,6 +78,25 @@ public class WarehouseController {
         return "redirect:/dashboard";
     }
 
+    @PostMapping("/update")
+    public String updateWarehouse(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam Long warehouseId,
+            @RequestParam String name,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            warehouseService.updateWarehouse(warehouseId, name, currentUser);
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Warehouse updated successfully"
+            );
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/dashboard";
+    }
+
     @PostMapping("/delete")
     public String deleteWarehouse(
             @AuthenticationPrincipal User currentUser,

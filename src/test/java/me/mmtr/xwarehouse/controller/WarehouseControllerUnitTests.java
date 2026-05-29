@@ -2,6 +2,7 @@ package me.mmtr.xwarehouse.controller;
 
 import me.mmtr.xwarehouse.exception.BusinessValidationException;
 import me.mmtr.xwarehouse.exception.ResourceAccessException;
+import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
 import me.mmtr.xwarehouse.model.enums.WarehouseRole;
@@ -135,11 +136,56 @@ public class WarehouseControllerUnitTests {
     }
 
     @Nested
+    class UpdateWarehouseTests {
+        @Test
+        void verifyIfWarehouseIsCorrectlyUpdatedAndRedirectionOccurs() throws Exception {
+            mockMvc.perform(post("/warehouse/update")
+                            .param("warehouseId", "3")
+                            .param("name", "New Name")
+                            .with(user(currentUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/dashboard"))
+                    .andExpect(flash().attribute(
+                            "success",
+                            "Warehouse updated successfully")
+                    );
+
+            verify(warehouseService, times(1))
+                    .updateWarehouse(
+                            warehouse.getId(),
+                            "New Name",
+                            currentUser
+                    );
+        }
+
+        @Test
+        void verifyIfErrorParamIsSetWhenExceptionIsThrown() throws Exception {
+            doThrow(new ResourceNotFoundException("Warehouse not found"))
+                    .when(warehouseService).updateWarehouse(
+                            warehouse.getId(), "New Name",  currentUser
+                    );
+
+            mockMvc.perform(post("/warehouse/update")
+                            .param("warehouseId", "3")
+                            .param("name", "New Name")
+                            .with(user(currentUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/dashboard"))
+                    .andExpect(flash().attribute(
+                            "error",
+                            "Warehouse not found")
+                    );
+        }
+    }
+
+    @Nested
     class DeleteWarehouseTests {
         @Test
         void verifyIfWarehouseIsCorrectlyDeletedAndRedirectionOccurs() throws Exception {
             mockMvc.perform(post("/warehouse/delete")
-                            .param("warehouseId", "1")
+                            .param("warehouseId", "3")
                             .with(user(currentUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
@@ -152,7 +198,7 @@ public class WarehouseControllerUnitTests {
             verify(
                     warehouseService,
                     times(1)
-            ).deleteWarehouse(1L, currentUser);
+            ).deleteWarehouse(warehouse.getId(), currentUser);
         }
 
         @Test
@@ -161,7 +207,7 @@ public class WarehouseControllerUnitTests {
                     .when(warehouseService).deleteWarehouse(1L, currentUser);
 
             mockMvc.perform(post("/warehouse/delete")
-                            .param("warehouseId", "1")
+                            .param("warehouseId", "3")
                             .with(user(currentUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())

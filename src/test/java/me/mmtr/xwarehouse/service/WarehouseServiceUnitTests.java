@@ -104,6 +104,103 @@ public class WarehouseServiceUnitTests {
     }
 
     @Nested
+    class UpdateWarehouseTests {
+        @Test
+        void verifyIfWarehouseIsUpdatedCorrectly() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            warehouseService.updateWarehouse(
+                    warehouse.getId(), "New Name", owner
+            );
+
+            assertEquals("New Name", warehouse.getName());
+            verify(
+                    warehouseRepository,
+                    times(1)
+            ).save(warehouse);
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenWarehouseDoesNotExist() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.empty());
+
+            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
+                    () -> warehouseService.updateWarehouse(
+                            warehouse.getId(), "New Name", owner
+                    ));
+
+            assertEquals("Warehouse not found", ex.getMessage());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenUserIsNotPermittedToUpdateWarehouse() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            ResourceAccessException ex = assertThrows(ResourceAccessException.class,
+                    () -> warehouseService.updateWarehouse(
+                            warehouse.getId(), "New Name", regularUser
+                    ));
+
+            assertEquals(
+                    "You are not permitted to perform this operation",
+                    ex.getMessage()
+            );
+        }
+    }
+
+    @Nested
+    class DeleteWarehouseTests {
+        @Test
+        void verifyIfWarehouseWasDeletedCorrectly() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            assertDoesNotThrow(() ->
+                    warehouseService.deleteWarehouse(warehouse.getId(), owner));
+
+            verify(warehouseRepository, times(1))
+                    .delete(warehouse);
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenWarehouseDoesNotExist() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.empty());
+
+            ResourceNotFoundException ex =
+                    assertThrows(ResourceNotFoundException.class, () ->
+                            warehouseService.deleteWarehouse(warehouse.getId(), owner));
+
+            assertEquals(
+                    "Warehouse with id 3 does not exist",
+                    ex.getMessage()
+            );
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenCurrentUserIsNotAnOwnerOfTheWarehouse() {
+            when(warehouseRepository.findById(warehouse.getId()))
+                    .thenReturn(Optional.of(warehouse));
+
+            ResourceAccessException ex =
+                    assertThrows(ResourceAccessException.class, () ->
+                            warehouseService.deleteWarehouse(
+                                    warehouse.getId(),
+                                    regularUser
+                            )
+                    );
+
+            assertEquals(
+                    "Current user is not the owner of this warehouse",
+                    ex.getMessage()
+            );
+        }
+    }
+
+    @Nested
     class AddMemberTests {
         @Test
         public void verifyIfMemberWasAddedCorrectly() {
@@ -514,55 +611,6 @@ public class WarehouseServiceUnitTests {
             );
 
             verify(warehouseMemberRepository, never()).delete(any());
-        }
-    }
-
-    @Nested
-    class DeleteWarehouseTests {
-        @Test
-        void verifyIfWarehouseWasDeletedCorrectly() {
-            when(warehouseRepository.findById(warehouse.getId()))
-                    .thenReturn(Optional.of(warehouse));
-
-            assertDoesNotThrow(() ->
-                    warehouseService.deleteWarehouse(warehouse.getId(), owner));
-
-            verify(warehouseRepository, times(1))
-                    .delete(warehouse);
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWhenWarehouseDoesNotExist() {
-            when(warehouseRepository.findById(warehouse.getId()))
-                    .thenReturn(Optional.empty());
-
-            ResourceNotFoundException ex =
-                    assertThrows(ResourceNotFoundException.class, () ->
-                            warehouseService.deleteWarehouse(warehouse.getId(), owner));
-
-            assertEquals(
-                    "Warehouse with id 3 does not exist",
-                    ex.getMessage()
-            );
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWhenCurrentUserIsNotAnOwnerOfTheWarehouse() {
-            when(warehouseRepository.findById(warehouse.getId()))
-                    .thenReturn(Optional.of(warehouse));
-
-            ResourceAccessException ex =
-                    assertThrows(ResourceAccessException.class, () ->
-                            warehouseService.deleteWarehouse(
-                                    warehouse.getId(),
-                                    regularUser
-                            )
-                    );
-
-            assertEquals(
-                    "Current user is not the owner of this warehouse",
-                    ex.getMessage()
-            );
         }
     }
 

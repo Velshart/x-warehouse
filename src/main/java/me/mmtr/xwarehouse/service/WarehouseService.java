@@ -139,6 +139,21 @@ public class WarehouseService {
     }
 
     @Transactional
+    public void updateWarehouse(Long warehouseId, String newName, User currentUser) {
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found"));
+
+        if (!warehouse.getOwner().getId().equals(currentUser.getId())) {
+            throw new ResourceAccessException(
+                    "You are not permitted to perform this operation"
+            );
+        }
+
+        warehouse.setName(newName);
+        warehouseRepository.save(warehouse);
+    }
+
+    @Transactional
     public void deleteWarehouse(Long warehouseId, User currentUser) {
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() ->
