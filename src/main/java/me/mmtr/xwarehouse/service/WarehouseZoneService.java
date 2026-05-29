@@ -63,12 +63,35 @@ public class WarehouseZoneService {
         zoneRepository.findByWarehouseIdAndName(warehouseId, name)
                 .ifPresent(zone -> {
                     throw new BusinessValidationException(
-                            "Zone with name '" + name + "' already exists in this warehouse"
+                            "Zone with name " + name + " already exists" +
+                                    " in this warehouse"
                     );
                 });
 
         WarehouseZone warehouseZone = new WarehouseZone(name, warehouse);
 
+        zoneRepository.save(warehouseZone);
+    }
+
+    @Transactional
+    public void updateZone(
+            Long warehouseId,
+            Long zoneId,
+            String newName,
+            User currentUser
+    ) {
+        validateWriteAccess(warehouseId, currentUser);
+
+        WarehouseZone warehouseZone = zoneRepository.findById(zoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
+
+        if (!warehouseZone.getWarehouse().getId().equals(warehouseId)) {
+            throw new ResourceNotFoundException(
+                    "Requested zone does not belong to the specified warehouse"
+            );
+        }
+
+        warehouseZone.setName(newName);
         zoneRepository.save(warehouseZone);
     }
 
@@ -83,7 +106,7 @@ public class WarehouseZoneService {
 
         if (!warehouseZone.getWarehouse().getId().equals(warehouseId)) {
             throw new ResourceNotFoundException(
-                    "This Zone does not exist in this warehouse"
+                    "Requested zone does not belong to the specified warehouse"
             );
         }
 
@@ -124,6 +147,40 @@ public class WarehouseZoneService {
 
             itemRepository.save(warehouseItem);
         }
+    }
+
+    @Transactional
+    public void updateItemInZone(
+            Long warehouseId,
+            Long itemId,
+            String newName,
+            String newSku,
+            Long newQuantity,
+            User currentUser
+    ) {
+        validateWriteAccess(warehouseId, currentUser);
+
+        WarehouseItem item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Item does not exist"));
+
+        if (!item.getWarehouseZone().getWarehouse().getId().equals(warehouseId)) {
+            throw new ResourceNotFoundException("Item does not belong to this warehouse");
+        }
+
+        if (!item.getSku().equals(newSku)) {
+            itemRepository.findByWarehouseZoneWarehouseIdAndSku(warehouseId, newSku)
+                    .ifPresent(warehouseItem -> {
+                        throw new BusinessValidationException("Item with SKU " + newSku +
+                                " already exists"
+                        );
+                    });
+        }
+
+        item.setName(newName);
+        item.setSku(newSku);
+        item.setQuantity(newQuantity);
+
+        itemRepository.save(item);
     }
 
     @Transactional

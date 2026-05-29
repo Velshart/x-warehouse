@@ -80,6 +80,30 @@ public class WarehouseZoneController {
         return "redirect:/warehouse/" + warehouseId;
     }
 
+    @PostMapping("/{warehouseId}/update-zone")
+    public String updateZone(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long warehouseId,
+            @RequestParam Long zoneId,
+            @RequestParam String name,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            zoneService.updateZone(warehouseId, zoneId, name, currentUser);
+
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Zone updated successfully"
+            );
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute(
+                    "error",
+                    e.getMessage()
+            );
+        }
+        return "redirect:/warehouse/" + warehouseId;
+    }
+
     @PostMapping("/{warehouseId}/delete-zone")
     public String deleteZone(
             @AuthenticationPrincipal User currentUser,
@@ -122,6 +146,34 @@ public class WarehouseZoneController {
             );
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/warehouse/" + warehouseId + "/zone/" + zoneId;
+    }
+
+    @PostMapping("/{warehouseId}/zone/{zoneId}/update-item")
+    public String updateItem(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long warehouseId,
+            @PathVariable Long zoneId,
+            @RequestParam Long itemId,
+            @RequestParam String name,
+            @RequestParam String sku,
+            @RequestParam Long quantity,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            zoneService.updateItemInZone(
+                    warehouseId, itemId, name,  sku, quantity, currentUser
+            );
+
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Item updated successfully."
+            );
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute(
+                    "error", e.getMessage()
+            );
         }
         return "redirect:/warehouse/" + warehouseId + "/zone/" + zoneId;
     }

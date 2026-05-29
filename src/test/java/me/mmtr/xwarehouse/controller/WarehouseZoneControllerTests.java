@@ -34,23 +34,23 @@ public class WarehouseZoneControllerTests {
     @Autowired
     private MockMvc mockMvc;
 
-    private User mockUser;
-    private Warehouse mockWarehouse;
-    private WarehouseZone mockZone;
+    private User testUser;
+    private Warehouse testWarehouse;
+    private WarehouseZone testZone;
 
     @BeforeEach
     public void setup() {
-        mockUser = new User();
-        mockUser.setId(1L);
-        mockUser.setUsername("testuser");
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setUsername("testuser");
 
-        mockWarehouse = new Warehouse();
-        mockWarehouse.setId(2L);
-        mockWarehouse.setName("Central Warehouse");
-        mockWarehouse.setOwner(mockUser);
+        testWarehouse = new Warehouse();
+        testWarehouse.setId(2L);
+        testWarehouse.setName("Central Warehouse");
+        testWarehouse.setOwner(testUser);
 
-        mockZone = new WarehouseZone("Zone A", mockWarehouse);
-        mockZone.setId(3L);
+        testZone = new WarehouseZone("Zone A", testWarehouse);
+        testZone.setId(3L);
     }
 
     @Nested
@@ -58,12 +58,12 @@ public class WarehouseZoneControllerTests {
         @Test
         void verifyIfZoneViewIsReturnedCorrectly() throws Exception {
             when(zoneService.getZoneByIdAndUser(
-                    mockWarehouse.getId(),
-                    mockZone.getId(),
-                    mockUser
-            )).thenReturn(mockZone);
+                    testWarehouse.getId(),
+                    testZone.getId(),
+                    testUser
+            )).thenReturn(testZone);
 
-            mockMvc.perform(get("/warehouse/2/zone/3").with(user(mockUser)))
+            mockMvc.perform(get("/warehouse/2/zone/3").with(user(testUser)))
                     .andExpect(status().isOk())
                     .andExpect(view().name("manage-zone"))
                     .andExpect(model().attributeExists(
@@ -80,21 +80,21 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .getZoneByIdAndUser(
-                            mockWarehouse.getId(),
-                            mockZone.getId(),
-                            mockUser
+                            testWarehouse.getId(),
+                            testZone.getId(),
+                            testUser
                     );
         }
 
         @Test
         void verifyIfRedirectionOccursWhenAnExceptionIsThrown() throws Exception {
             when(zoneService.getZoneByIdAndUser(
-                    mockWarehouse.getId(), mockZone.getId(), mockUser
+                    testWarehouse.getId(), testZone.getId(), testUser
             )).thenThrow(new ResourceNotFoundException(
                     "Requested zone does not belong to the specified warehouse"
             ));
 
-            mockMvc.perform(get("/warehouse/2/zone/3").with(user(mockUser)))
+            mockMvc.perform(get("/warehouse/2/zone/3").with(user(testUser)))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2"))
                     .andExpect(flash().attribute(
@@ -109,15 +109,9 @@ public class WarehouseZoneControllerTests {
     class AddZoneTests {
         @Test
         void verifyIfRedirectionOccursAndSuccessFlashAttributeIsAdded() throws Exception {
-            doNothing().when(zoneService).addZone(
-                    mockWarehouse.getId(),
-                    "Zone B",
-                    mockUser
-            );
-
             mockMvc.perform(post("/warehouse/2/add-zone")
                             .param("name", "Zone B")
-                            .with(user(mockUser))
+                            .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2"))
@@ -128,9 +122,9 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .addZone(
-                            mockWarehouse.getId(),
+                            testWarehouse.getId(),
                             "Zone B",
-                            mockUser
+                            testUser
                     );
         }
 
@@ -139,14 +133,14 @@ public class WarehouseZoneControllerTests {
             doThrow(new ResourceAccessException("You are not permitted to perform" +
                     " modifications in this warehouse"))
                     .when(zoneService).addZone(
-                            mockWarehouse.getId(),
+                            testWarehouse.getId(),
                             "Zone B",
-                            mockUser
+                            testUser
                     );
 
             mockMvc.perform(post("/warehouse/2/add-zone")
                             .param("name", "Zone B")
-                            .with(user(mockUser))
+                            .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2"))
@@ -159,18 +153,62 @@ public class WarehouseZoneControllerTests {
     }
 
     @Nested
+    class UpdateZoneTests {
+        @Test
+        void verifyIfRedirectionOccursWithSuccessFlashAttribute() throws Exception {
+            mockMvc.perform(post("/warehouse/2/update-zone")
+                            .param("warehouseId", "2")
+                            .param("zoneId", "3")
+                            .param("name", "New Name")
+                            .with(user(testUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/warehouse/2"))
+                    .andExpect(flash().attribute(
+                            "success",
+                            "Zone updated successfully"
+                    ));
+
+            verify(zoneService, times(1)).updateZone(
+                    testWarehouse.getId(),
+                    testZone.getId(),
+                    "New Name",
+                    testUser
+            );
+        }
+
+        @Test
+        void verifyIfErrorFlashAttributeOccursWhenAnExceptionIsThrown() throws Exception {
+            doThrow(new ResourceNotFoundException("Zone not found"))
+                    .when(zoneService).updateZone(
+                            testWarehouse.getId(),
+                            testZone.getId(),
+                            "New Name",
+                            testUser
+                    );
+
+            mockMvc.perform(post("/warehouse/2/update-zone")
+                            .param("warehouseId", "2")
+                            .param("zoneId", "3")
+                            .param("name", "New Name")
+                            .with(user(testUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/warehouse/2"))
+                    .andExpect(flash().attribute(
+                            "error",
+                            "Zone not found"
+                    ));
+        }
+    }
+
+    @Nested
     class DeleteZoneTests {
         @Test
         void verifyIfRedirectIonOccursWithSuccessFlashAttribute() throws Exception {
-            doNothing().when(zoneService).deleteZone(
-                    mockWarehouse.getId(),
-                    mockZone.getId(),
-                    mockUser
-            );
-
             mockMvc.perform(post("/warehouse/2/delete-zone")
                             .param("zoneId", "3")
-                            .with(user(mockUser))
+                            .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2"))
@@ -181,9 +219,9 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .deleteZone(
-                            mockWarehouse.getId(),
-                            mockZone.getId(),
-                            mockUser
+                            testWarehouse.getId(),
+                            testZone.getId(),
+                            testUser
                     );
         }
 
@@ -191,14 +229,14 @@ public class WarehouseZoneControllerTests {
         void verifyIfRedirectionWithErrorFlashAttributeOccursWhenAnExceptionIsThrown() throws Exception {
             doThrow(new ResourceNotFoundException("Zone not found"))
                     .when(zoneService).deleteZone(
-                            mockWarehouse.getId(),
-                            mockZone.getId(),
-                            mockUser
+                            testWarehouse.getId(),
+                            testZone.getId(),
+                            testUser
                     );
 
             mockMvc.perform(post("/warehouse/2/delete-zone")
                             .param("zoneId", "3")
-                            .with(user(mockUser))
+                            .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2"))
@@ -213,20 +251,11 @@ public class WarehouseZoneControllerTests {
     class AddItemToZoneTests {
         @Test
         void verifyIfRedirectionOccursWithSuccessFlashAttribute() throws Exception {
-            doNothing().when(zoneService).addItemToZone(
-                    mockWarehouse.getId(),
-                    mockZone.getId(),
-                    "Item A",
-                    "TEST-01",
-                    5L,
-                    mockUser
-            );
-
             mockMvc.perform(post("/warehouse/2/zone/3/add-item")
                             .param("name", "Item A")
                             .param("sku", "TEST-01")
                             .param("quantity", "5")
-                            .with(user(mockUser))
+                            .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2/zone/3"))
@@ -237,33 +266,34 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .addItemToZone(
-                            mockWarehouse.getId(),
-                            mockZone.getId(),
+                            testWarehouse.getId(),
+                            testZone.getId(),
                             "Item A",
                             "TEST-01",
                             5L,
-                            mockUser
+                            testUser
                     );
         }
 
         @Test
         void verifyIfRedirectionWithErrorFlashAttributeOccursWhenAnExceptionIsThrown() throws Exception {
             doThrow(new ResourceAccessException(
-                    "You are not permitted to perform modifications in this warehouse"
+                    "You are not permitted to perform modifications" +
+                            " in this warehouse"
             )).when(zoneService).addItemToZone(
-                    mockWarehouse.getId(),
-                    mockZone.getId(),
+                    testWarehouse.getId(),
+                    testZone.getId(),
                     "Item A",
                     "TEST-01",
                     5L,
-                    mockUser
+                    testUser
             );
 
             mockMvc.perform(post("/warehouse/2/zone/3/add-item")
                             .param("name", "Item A")
                             .param("sku", "TEST-01")
                             .param("quantity", "5")
-                            .with(user(mockUser))
+                            .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2/zone/3"))
@@ -276,16 +306,69 @@ public class WarehouseZoneControllerTests {
     }
 
     @Nested
+    class UpdateItemInZoneTests {
+        @Test
+        void verifyIfRedirectionOccursWithSuccessFlashAttribute() throws Exception {
+            mockMvc.perform(post("/warehouse/2/zone/3/update-item")
+                            .param("itemId", "100")
+                            .param("name", "New Name")
+                            .param("sku", "TEST-02")
+                            .param("quantity", "10")
+                            .with(user(testUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/warehouse/2/zone/3"))
+                    .andExpect(flash().attribute(
+                            "success",
+                            "Item updated successfully."
+                    ));
+
+            verify(zoneService, times(1)).updateItemInZone(
+                    testWarehouse.getId(),
+                    100L,
+                    "New Name",
+                    "TEST-02",
+                    10L,
+                    testUser
+            );
+        }
+
+        @Test
+        void verifyIfRedirectionWithErrorFlashAttributeOccursWhenAnExceptionIsThrown() throws Exception {
+            doThrow(new ResourceNotFoundException("Item does not exist"))
+                    .when(zoneService).updateItemInZone(
+                            testWarehouse.getId(),
+                            100L,
+                            "New Name",
+                            "TEST-02",
+                            10L,
+                            testUser
+                    );
+
+            mockMvc.perform(post("/warehouse/2/zone/3/update-item")
+                            .param("itemId", "100")
+                            .param("name", "New Name")
+                            .param("sku", "TEST-02")
+                            .param("quantity", "10")
+                            .with(user(testUser))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/warehouse/2/zone/3"))
+                    .andExpect(flash().attribute(
+                            "error",
+                            "Item does not exist"
+                    ));
+
+        }
+    }
+
+    @Nested
     class RemoveItemFromZoneTests {
         @Test
         void verifyIfRedirectionOccursWithSuccessFlashAttribute() throws Exception {
-            doNothing().when(zoneService).removeItemFromZone(
-                    mockWarehouse.getId(), 100L, mockUser
-            );
-
             mockMvc.perform(post("/warehouse/2/zone/3/remove-item")
                             .param("itemId", "100")
-                            .with(user(mockUser))
+                            .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2/zone/3"))
@@ -296,9 +379,9 @@ public class WarehouseZoneControllerTests {
 
             verify(zoneService, times(1))
                     .removeItemFromZone(
-                            mockWarehouse.getId(),
+                            testWarehouse.getId(),
                             100L,
-                            mockUser
+                            testUser
                     );
         }
 
@@ -307,14 +390,14 @@ public class WarehouseZoneControllerTests {
             doThrow(new ResourceAccessException("You are not permitted to perform" +
                     " modifications in this warehouse"
             )).when(zoneService).removeItemFromZone(
-                    mockWarehouse.getId(),
+                    testWarehouse.getId(),
                     100L,
-                    mockUser
+                    testUser
             );
 
             mockMvc.perform(post("/warehouse/2/zone/3/remove-item")
                             .param("itemId", "100")
-                            .with(user(mockUser))
+                            .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/warehouse/2/zone/3"))
