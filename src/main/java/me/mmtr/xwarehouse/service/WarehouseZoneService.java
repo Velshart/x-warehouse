@@ -6,33 +6,22 @@ import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
-import me.mmtr.xwarehouse.model.WarehouseItem;
 import me.mmtr.xwarehouse.model.WarehouseZone;
-import me.mmtr.xwarehouse.repository.WarehouseItemRepository;
-import me.mmtr.xwarehouse.repository.WarehouseRepository;
 import me.mmtr.xwarehouse.repository.WarehouseZoneRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 public class WarehouseZoneService {
 
     private final WarehouseZoneRepository zoneRepository;
-    private final WarehouseItemRepository itemRepository;
     private final WarehouseService warehouseService;
-    private final WarehouseRepository warehouseRepository;
 
     public WarehouseZoneService(
             WarehouseZoneRepository zoneRepository,
-            WarehouseItemRepository itemRepository,
-            WarehouseService warehouseService,
-            WarehouseRepository warehouseRepository
+            WarehouseService warehouseService
     ) {
         this.zoneRepository = zoneRepository;
-        this.itemRepository = itemRepository;
         this.warehouseService = warehouseService;
-        this.warehouseRepository = warehouseRepository;
     }
 
     public WarehouseZone getZoneByIdAndUser(Long warehouseId, Long zoneId, User currentUser) {
@@ -113,95 +102,6 @@ public class WarehouseZoneService {
         zoneRepository.delete(warehouseZone);
     }
 
-    @Transactional
-    public void addItemToZone(
-            Long warehouseId,
-            Long zoneId,
-            String name,
-            String sku,
-            Long quantity,
-            User currentUser) {
-        validateWriteAccess(warehouseId, currentUser);
-
-        WarehouseZone zone =
-                zoneRepository.findById(zoneId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Zone with name " + name +
-                                                " does not exist in this warehouse"
-                                )
-                        );
-
-        Optional<WarehouseItem> warehouseItemOptional =
-                itemRepository.findByWarehouseZoneWarehouseIdAndSku(warehouseId, sku);
-
-        if (warehouseItemOptional.isPresent()) {
-            WarehouseItem foundItem = warehouseItemOptional.get();
-            foundItem.setQuantity(foundItem.getQuantity() + quantity);
-
-            itemRepository.save(foundItem);
-        } else {
-            WarehouseItem warehouseItem = new WarehouseItem(
-                    name, sku, quantity, zone
-            );
-
-            itemRepository.save(warehouseItem);
-        }
-    }
-
-    @Transactional
-    public void updateItemInZone(
-            Long warehouseId,
-            Long itemId,
-            String newName,
-            String newSku,
-            Long newQuantity,
-            User currentUser
-    ) {
-        validateWriteAccess(warehouseId, currentUser);
-
-        WarehouseItem item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item does not exist"));
-
-        if (!item.getWarehouseZone().getWarehouse().getId().equals(warehouseId)) {
-            throw new ResourceNotFoundException("Item does not belong to this warehouse");
-        }
-
-        if (!item.getSku().equals(newSku)) {
-            itemRepository.findByWarehouseZoneWarehouseIdAndSku(warehouseId, newSku)
-                    .ifPresent(warehouseItem -> {
-                        throw new BusinessValidationException("Item with SKU " + newSku +
-                                " already exists"
-                        );
-                    });
-        }
-
-        item.setName(newName);
-        item.setSku(newSku);
-        item.setQuantity(newQuantity);
-
-        itemRepository.save(item);
-    }
-
-    @Transactional
-    public void removeItemFromZone(Long warehouseId, Long itemId, User currentUser) {
-        Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Warehouse does not exist"
-                ));
-
-        validateWriteAccess(warehouseId, currentUser);
-
-        WarehouseItem warehouseItem = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item does not exist"));
-
-        if (!warehouseItem.getWarehouseZone().getWarehouse().getId().equals(warehouse.getId())) {
-            throw new ResourceNotFoundException("Item does not exist in this warehouse");
-        }
-
-        itemRepository.delete(warehouseItem);
-    }
-
     private void validateWriteAccess(Long warehouseId, User currentUser) {
         if (!warehouseService.hasAccess(
                 warehouseId,
@@ -209,7 +109,8 @@ public class WarehouseZoneService {
                 true
         )) {
             throw new ResourceAccessException(
-                    "You are not permitted to perform modifications in this warehouse"
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
             );
         }
     }

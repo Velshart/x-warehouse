@@ -54,9 +54,9 @@ public class WarehouseControllerUnitTests {
         @Test
         void verifyIfWarehouseViewIsReturnedCorrectly() throws Exception {
             when(warehouseService.getWarehouseByIdAndUser(
-                    3L, ownerUser)).thenReturn(warehouse);
+                    warehouse.getId(), ownerUser)).thenReturn(warehouse);
 
-            mockMvc.perform(get("/warehouse/3")
+            mockMvc.perform(get("/warehouse/" + warehouse.getId())
                             .with(user(ownerUser)))
                     .andExpect(status().isOk())
                     .andExpect(view().name("manage-warehouse"))
@@ -68,12 +68,12 @@ public class WarehouseControllerUnitTests {
         }
 
         @Test
-        void shouldRedirectToDashboardWithErrorFlashAttributeWhenExceptionisThrown() throws Exception {
+        void shouldRedirectToDashboardWithErrorFlashAttributeWhenExceptionIsThrown() throws Exception {
 
-            when(warehouseService.getWarehouseByIdAndUser(3L, currentUser))
+            when(warehouseService.getWarehouseByIdAndUser(warehouse.getId(), currentUser))
                     .thenThrow(new ResourceAccessException("Access denied"));
 
-            mockMvc.perform(get("/warehouse/3")
+            mockMvc.perform(get("/warehouse/" + warehouse.getId())
                             .with(user(currentUser)))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/dashboard"))
@@ -140,7 +140,7 @@ public class WarehouseControllerUnitTests {
         @Test
         void verifyIfWarehouseIsCorrectlyUpdatedAndRedirectionOccurs() throws Exception {
             mockMvc.perform(post("/warehouse/update")
-                            .param("warehouseId", "3")
+                            .param("warehouseId", String.valueOf(warehouse.getId()))
                             .param("name", "New Name")
                             .with(user(currentUser))
                             .with(csrf()))
@@ -163,11 +163,11 @@ public class WarehouseControllerUnitTests {
         void verifyIfErrorParamIsSetWhenExceptionIsThrown() throws Exception {
             doThrow(new ResourceNotFoundException("Warehouse not found"))
                     .when(warehouseService).updateWarehouse(
-                            warehouse.getId(), "New Name",  currentUser
+                            warehouse.getId(), "New Name", currentUser
                     );
 
             mockMvc.perform(post("/warehouse/update")
-                            .param("warehouseId", "3")
+                            .param("warehouseId", String.valueOf(warehouse.getId()))
                             .param("name", "New Name")
                             .with(user(currentUser))
                             .with(csrf()))
@@ -185,7 +185,7 @@ public class WarehouseControllerUnitTests {
         @Test
         void verifyIfWarehouseIsCorrectlyDeletedAndRedirectionOccurs() throws Exception {
             mockMvc.perform(post("/warehouse/delete")
-                            .param("warehouseId", "3")
+                            .param("warehouseId", String.valueOf(warehouse.getId()))
                             .with(user(currentUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
@@ -204,10 +204,10 @@ public class WarehouseControllerUnitTests {
         @Test
         void verifyIfErrorParamIsSetWhenExceptionIsThrown() throws Exception {
             doThrow(new RuntimeException("Test exception"))
-                    .when(warehouseService).deleteWarehouse(1L, currentUser);
+                    .when(warehouseService).deleteWarehouse(warehouse.getId(), currentUser);
 
             mockMvc.perform(post("/warehouse/delete")
-                            .param("warehouseId", "3")
+                            .param("warehouseId", String.valueOf(warehouse.getId()))
                             .with(user(currentUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
@@ -223,13 +223,13 @@ public class WarehouseControllerUnitTests {
     class AddMemberTests {
         @Test
         void verifyIfMemberIsAddedSuccessfullyAndRedirectionOccurs() throws Exception {
-            mockMvc.perform(post("/warehouse/3/add-member")
+            mockMvc.perform(post("/warehouse/" + warehouse.getId() + "/add-member")
                             .with(user(currentUser))
                             .with(csrf())
                             .param("username", "newUser")
                             .param("role", "ADMIN"))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/warehouse/3"))
+                    .andExpect(redirectedUrl("/warehouse/" + warehouse.getId()))
                     .andExpect(flash().attribute(
                             "success",
                             "New member added successfully")
@@ -239,7 +239,7 @@ public class WarehouseControllerUnitTests {
                     warehouseService,
                     times(1)
             ).addMember(
-                    3L,
+                    warehouse.getId(),
                     "newUser",
                     WarehouseRole.ADMIN, currentUser
             );
@@ -256,13 +256,13 @@ public class WarehouseControllerUnitTests {
                     any(User.class)
             );
 
-            mockMvc.perform(post("/warehouse/3/add-member")
+            mockMvc.perform(post("/warehouse/" + warehouse.getId() + "/add-member")
                             .with(user(currentUser))
                             .with(csrf())
                             .param("username", "existingUser")
                             .param("role", "VIEWER"))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/warehouse/3"))
+                    .andExpect(redirectedUrl("/warehouse/" + warehouse.getId()))
                     .andExpect(flash().attribute(
                             "error",
                             "User is already a member of this warehouse")
@@ -274,19 +274,19 @@ public class WarehouseControllerUnitTests {
     class RemoveMemberTests {
         @Test
         void verifyIfMemberIsRemovedSuccessfullyAndRedirectionOccurs() throws Exception {
-            mockMvc.perform(post("/warehouse/3/remove-member")
+            mockMvc.perform(post("/warehouse/" + warehouse.getId() + "/remove-member")
                             .with(user(ownerUser))
                             .with(csrf())
-                            .param("userId", "2"))
+                            .param("userId", String.valueOf(ownerUser.getId())))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/warehouse/3"))
+                    .andExpect(redirectedUrl("/warehouse/" + warehouse.getId()))
                     .andExpect(flash().attribute(
                             "success",
                             "Member removed successfully"
                     ));
 
             verify(warehouseService, times(1))
-                    .removeMember(3L, 2L, ownerUser);
+                    .removeMember(warehouse.getId(), ownerUser.getId(), ownerUser);
         }
 
         @Test
@@ -294,17 +294,17 @@ public class WarehouseControllerUnitTests {
             doThrow(new BusinessValidationException(
                     "An owner cannot be removed from members list")
             ).when(warehouseService).removeMember(
-                    3L,
-                    1L,
+                    warehouse.getId(),
+                    currentUser.getId(),
                     ownerUser
             );
 
-            mockMvc.perform(post("/warehouse/3/remove-member")
+            mockMvc.perform(post("/warehouse/" + warehouse.getId() + "/remove-member")
                             .with(user(ownerUser))
                             .with(csrf())
-                            .param("userId", "1"))
+                            .param("userId", String.valueOf(currentUser.getId())))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/warehouse/3"))
+                    .andExpect(redirectedUrl("/warehouse/" + warehouse.getId()))
                     .andExpect(flash().attribute(
                             "error",
                             "An owner cannot be removed from members list"
@@ -312,4 +312,3 @@ public class WarehouseControllerUnitTests {
         }
     }
 }
-

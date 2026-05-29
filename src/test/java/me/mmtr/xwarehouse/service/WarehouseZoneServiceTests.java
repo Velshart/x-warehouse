@@ -5,10 +5,7 @@ import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
-import me.mmtr.xwarehouse.model.WarehouseItem;
 import me.mmtr.xwarehouse.model.WarehouseZone;
-import me.mmtr.xwarehouse.repository.WarehouseItemRepository;
-import me.mmtr.xwarehouse.repository.WarehouseRepository;
 import me.mmtr.xwarehouse.repository.WarehouseZoneRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -30,21 +27,13 @@ public class WarehouseZoneServiceTests {
     private WarehouseZoneRepository zoneRepository;
 
     @Mock
-    private WarehouseItemRepository itemRepository;
-
-    @Mock
     private WarehouseService warehouseService;
-
-    @Mock
-    private WarehouseRepository warehouseRepository;
 
     @InjectMocks
     private WarehouseZoneService zoneService;
 
     private User currentUser;
-
     private Warehouse testWarehouse;
-
     private WarehouseZone testZone;
 
     @BeforeEach
@@ -78,7 +67,7 @@ public class WarehouseZoneServiceTests {
                     );
 
             assertNotNull(zone);
-            assertEquals(3L, zone.getId());
+            assertEquals(testZone.getId(), zone.getId());
         }
 
         @Test
@@ -93,11 +82,13 @@ public class WarehouseZoneServiceTests {
             ResourceNotFoundException ex =
                     assertThrows(ResourceNotFoundException.class, () ->
                             zoneService.getZoneByIdAndUser(
-                                    testWarehouse.getId(), testZone.getId(), currentUser
+                                    testWarehouse.getId(),
+                                    testZone.getId(),
+                                    currentUser
                             )
                     );
 
-            assertEquals("Zone with id 3 does not exist", ex.getMessage());
+            assertEquals("Zone with id " + testZone.getId() + " does not exist", ex.getMessage());
         }
 
         @Test
@@ -144,17 +135,24 @@ public class WarehouseZoneServiceTests {
             ).thenReturn(true);
 
             when(zoneRepository
-                    .findByWarehouseIdAndName(testWarehouse.getId(), testZone.getName()))
+                    .findByWarehouseIdAndName(
+                            testWarehouse.getId(),
+                            testZone.getName()
+                    ))
                     .thenReturn(Optional.empty());
 
-            zoneService.addZone(testWarehouse.getId(), testZone.getName(), currentUser);
+            zoneService.addZone(
+                    testWarehouse.getId(),
+                    testZone.getName(),
+                    currentUser
+            );
 
             verify(zoneRepository, times(1))
                     .save(any(WarehouseZone.class));
         }
 
         @Test
-        void verifyIfExceptionIsThrownWhenUserDoesNotHaveWriteAccessToCreateZone() {
+        void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
             when(warehouseService.getWarehouseByIdAndUser(
                     testWarehouse.getId(), currentUser))
                     .thenReturn(testWarehouse);
@@ -165,15 +163,17 @@ public class WarehouseZoneServiceTests {
                     true)
             ).thenReturn(false);
 
-            ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
-                    zoneService.addZone(
+            ResourceAccessException ex = assertThrows(ResourceAccessException.class,
+                    () -> zoneService.addZone(
                             testWarehouse.getId(),
-                            "New Zone", currentUser
+                            "New Zone",
+                            currentUser
                     )
             );
 
             assertEquals(
-                    "You are not permitted to perform modifications in this warehouse",
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse",
                     ex.getMessage()
             );
             verify(zoneRepository, never()).save(any());
@@ -192,7 +192,10 @@ public class WarehouseZoneServiceTests {
             ).thenReturn(true);
 
             when(zoneRepository
-                    .findByWarehouseIdAndName(testWarehouse.getId(), testZone.getName())
+                    .findByWarehouseIdAndName(
+                            testWarehouse.getId(),
+                            testZone.getName()
+                    )
             ).thenReturn(Optional.of(testZone));
 
             assertThrows(BusinessValidationException.class, () ->
@@ -231,16 +234,14 @@ public class WarehouseZoneServiceTests {
         }
 
         @Test
-        void verifyIfExceptionIsThrownWhenZoneDoesNotExist() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
+        void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
                     currentUser.getId(),
-                    true
-            )).thenReturn(true);
+                    true)
+            ).thenReturn(false);
 
-            when(zoneRepository.findById(testZone.getId()))
-                    .thenReturn(Optional.of(testZone));
-
-            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
+            ResourceAccessException ex = assertThrows(ResourceAccessException.class,
                     () -> zoneService.updateZone(
                             testWarehouse.getId(),
                             testZone.getId(),
@@ -248,6 +249,34 @@ public class WarehouseZoneServiceTests {
                             currentUser
                     )
             );
+
+            assertEquals(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse",
+                    ex.getMessage()
+            );
+            verify(zoneRepository, never()).save(any());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenZoneDoesNotExist() {
+            when(warehouseService.hasAccess(testWarehouse.getId(),
+                    currentUser.getId(),
+                    true
+            )).thenReturn(true);
+
+            when(zoneRepository.findById(testZone.getId()))
+                    .thenReturn(Optional.empty());
+
+            ResourceNotFoundException ex =
+                    assertThrows(ResourceNotFoundException.class,
+                            () -> zoneService.updateZone(
+                                    testWarehouse.getId(),
+                                    testZone.getId(),
+                                    "New Name",
+                                    currentUser
+                            )
+                    );
 
             assertEquals("Zone not found", ex.getMessage());
         }
@@ -269,17 +298,19 @@ public class WarehouseZoneServiceTests {
             when(zoneRepository.findById(testZone.getId()))
                     .thenReturn(Optional.of(testZone));
 
-            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
-                    () -> zoneService.updateZone(
-                            testWarehouse.getId(),
-                            testZone.getId(),
-                            "New Name",
-                            currentUser
-                    )
-            );
+            ResourceNotFoundException ex =
+                    assertThrows(ResourceNotFoundException.class,
+                            () -> zoneService.updateZone(
+                                    testWarehouse.getId(),
+                                    testZone.getId(),
+                                    "New Name",
+                                    currentUser
+                            )
+                    );
 
             assertEquals(
-                    "Requested zone does not belong to the specified warehouse",
+                    "Requested zone does not belong" +
+                            " to the specified warehouse",
                     ex.getMessage()
             );
         }
@@ -303,7 +334,35 @@ public class WarehouseZoneServiceTests {
                     currentUser
             );
 
-            verify(zoneRepository, times(1)).delete(testZone);
+            verify(
+                    zoneRepository,
+                    times(1)
+            ).delete(testZone);
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    true)
+            ).thenReturn(false);
+
+            ResourceAccessException ex =
+                    assertThrows(ResourceAccessException.class, () ->
+                            zoneService.deleteZone(
+                                    testWarehouse.getId(),
+                                    testZone.getId(),
+                                    currentUser
+                            )
+                    );
+
+            assertEquals(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse",
+                    ex.getMessage()
+            );
+            verify(zoneRepository, never()).delete(any());
         }
 
         @Test
@@ -316,13 +375,14 @@ public class WarehouseZoneServiceTests {
             when(zoneRepository.findById(testZone.getId()))
                     .thenReturn(Optional.empty());
 
-            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
-                    () -> zoneService.deleteZone(
-                            testWarehouse.getId(),
-                            testZone.getId(),
-                            currentUser
-                    )
-            );
+            ResourceNotFoundException ex =
+                    assertThrows(ResourceNotFoundException.class,
+                            () -> zoneService.deleteZone(
+                                    testWarehouse.getId(),
+                                    testZone.getId(),
+                                    currentUser
+                            )
+                    );
 
             assertEquals(
                     "Zone not found",
@@ -356,396 +416,10 @@ public class WarehouseZoneServiceTests {
                     );
 
             assertEquals(
-                    "This Zone does not exist in this warehouse",
+                    "Requested zone does not belong" +
+                            " to the specified warehouse",
                     ex.getMessage());
             verify(zoneRepository, never()).delete(testZone);
-        }
-    }
-
-    @Nested
-    class AddItemToZoneTests {
-        @Test
-        void verifyIfNewItemIsSavedCorrectly() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
-            when(zoneRepository.findById(3L)).thenReturn(Optional.of(testZone));
-            when(itemRepository
-                    .findByWarehouseZoneWarehouseIdAndSku(
-                            testWarehouse.getId(), "TEST-01"))
-                    .thenReturn(Optional.empty());
-
-            zoneService.addItemToZone(
-                    testWarehouse.getId(),
-                    testZone.getId(),
-                    "New Item",
-                    "TEST-01",
-                    5L,
-                    currentUser
-            );
-
-            verify(itemRepository, times(1))
-                    .save(any(WarehouseItem.class));
-        }
-
-        @Test
-        void verifyIfItemQuantityIsIncreasedWhenSkuAlreadyExists() {
-            WarehouseItem existingItem = new WarehouseItem(
-                    "Existing Item", "TEST-01", 10L, testZone
-            );
-            existingItem.setId(100L);
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(), currentUser.getId(), true))
-                    .thenReturn(true);
-
-            when(zoneRepository
-                    .findById(testZone.getId())).thenReturn(Optional.of(testZone));
-
-            when(itemRepository
-                    .findByWarehouseZoneWarehouseIdAndSku(
-                            testWarehouse.getId(), "TEST-01"))
-                    .thenReturn(Optional.of(existingItem));
-
-            zoneService.addItemToZone(
-                    testWarehouse.getId(),
-                    testZone.getId(),
-                    "Existing Item",
-                    "TEST-01",
-                    5L,
-                    currentUser
-            );
-
-            assertEquals(15L, existingItem.getQuantity());
-            verify(itemRepository, times(1)).save(existingItem);
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(false);
-
-            ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
-                    zoneService.addItemToZone(
-                            testWarehouse.getId(),
-                            testZone.getId(),
-                            "Item",
-                            "TEST-01",
-                            5L,
-                            currentUser
-                    )
-            );
-
-            assertEquals(
-                    "You are not permitted to perform modifications" +
-                            " in this warehouse",
-                    ex.getMessage()
-            );
-            verify(itemRepository, never()).save(any());
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWhenZoneDoesNotExist() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
-            when(zoneRepository.findById(testZone.getId())).thenReturn(Optional.empty());
-
-            ResourceNotFoundException ex = assertThrows(
-                    ResourceNotFoundException.class, () ->
-                            zoneService.addItemToZone(
-                                    testWarehouse.getId(),
-                                    testZone.getId(),
-                                    "Zone A",
-                                    "TEST-01",
-                                    5L,
-                                    currentUser
-                            )
-            );
-
-            assertEquals(
-                    "Zone with name " + testZone.getName() + " does not exist in this warehouse",
-                    ex.getMessage()
-            );
-            verify(itemRepository, never()).delete(any());
-
-        }
-    }
-
-    @Nested
-    class UpdateItemInZone {
-        @Test
-        void verifyIfItemIsUpdatedCorrectly() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
-            WarehouseItem itemToUpdate = new WarehouseItem(
-                    "Item To Update", "TEST-01", 10L, testZone
-            );
-            itemToUpdate.setId(100L);
-
-            when(itemRepository.findById(100L)).thenReturn(Optional.of(itemToUpdate));
-
-            zoneService.updateItemInZone(
-                    testWarehouse.getId(),
-                    itemToUpdate.getId(),
-                    "New Name",
-                    "TEST-02",
-                    5L,
-                    currentUser
-            );
-
-            assertEquals("New Name", itemToUpdate.getName());
-            assertEquals("TEST-02", itemToUpdate.getSku());
-            assertEquals(5L, itemToUpdate.getQuantity());
-
-            verify(
-                    itemRepository,
-                    times(1)
-            ).save(itemToUpdate);
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWhenItemDoesNotExist() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
-            when(itemRepository.findById(100L)).thenReturn(Optional.empty());
-
-            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
-                    () ->
-                            zoneService.updateItemInZone(
-                                    testWarehouse.getId(),
-                                    100L,
-                                    "New Name",
-                                    "TEST-02",
-                                    5L,
-                                    currentUser
-                            )
-            );
-
-            assertEquals(
-                    "Item does not exist",
-                    ex.getMessage()
-            );
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWhenItemBelongsToTheOtherWarehouse() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
-            Warehouse otherWarehouse = new Warehouse(
-                    "Other Warehouse", currentUser
-            );
-            otherWarehouse.setId(200L);
-
-            testZone.setWarehouse(otherWarehouse);
-
-            WarehouseItem itemToUpdate = new WarehouseItem(
-                    "Item To Update", "TEST-01", 10L, testZone
-            );
-            itemToUpdate.setId(100L);
-
-            when(itemRepository.findById(100L))
-                    .thenReturn(Optional.of(itemToUpdate));
-
-            ResourceNotFoundException ex =
-                    assertThrows(ResourceNotFoundException.class, () ->
-                            zoneService.updateItemInZone(
-                                    testWarehouse.getId(),
-                                    100L,
-                                    "New Name",
-                                    "TEST-02",
-                                    5L,
-                                    currentUser
-                            )
-                    );
-
-            assertEquals(
-                    "Item does not belong to this warehouse",
-                    ex.getMessage()
-            );
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWhenItemWithGivenSkuAlreadyExists() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
-            WarehouseItem itemToUpdate = new WarehouseItem(
-                    "Item To Update", "TEST-01", 10L, testZone
-            );
-            itemToUpdate.setId(100L);
-
-            when(itemRepository.findById(100L))
-                    .thenReturn(Optional.of(itemToUpdate));
-
-            WarehouseItem itemWithTheSameSku = new WarehouseItem(
-                    "Item With The Same SKU",
-                    "TEST-02",
-                    10L,
-                    testZone
-            );
-            itemWithTheSameSku.setId(101L);
-
-            when(itemRepository.findByWarehouseZoneWarehouseIdAndSku(
-                    testWarehouse.getId(), "TEST-02")
-            ).thenReturn(Optional.of(itemWithTheSameSku));
-
-            BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
-                    zoneService.updateItemInZone(
-                            testWarehouse.getId(),
-                            itemToUpdate.getId(),
-                            "New Name",
-                            "TEST-02",
-                            5L,
-                            currentUser
-                    )
-            );
-
-            assertEquals(
-                    "Item with SKU TEST-02 already exists",
-                    ex.getMessage()
-            );
-
-        }
-    }
-
-    @Nested
-    class RemoveItemFromZoneTests {
-        @Test
-        void verifyIfItemIsDeletedCorrectly() {
-            WarehouseItem itemToDelete = new WarehouseItem(
-                    "Item To Delete", "TEST-01", 10L, testZone
-            );
-            itemToDelete.setId(100L);
-
-            when(warehouseRepository.findById(testWarehouse.getId()))
-                    .thenReturn(Optional.of(testWarehouse));
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
-            when(itemRepository.findById(100L)).thenReturn(Optional.of(itemToDelete));
-
-            zoneService.removeItemFromZone(
-                    testWarehouse.getId(), 100L, currentUser
-            );
-
-            verify(itemRepository, times(1))
-                    .delete(itemToDelete);
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWheWarehouseDoesNotExist() {
-            when(warehouseRepository.findById(testWarehouse.getId()))
-                    .thenReturn(Optional.empty());
-
-            ResourceNotFoundException ex = assertThrows(
-                    ResourceNotFoundException.class, () ->
-                            zoneService.removeItemFromZone(testWarehouse.getId(), 100L, currentUser)
-            );
-
-            assertEquals(
-                    "Warehouse does not exist",
-                    ex.getMessage()
-            );
-            verify(itemRepository, never()).delete(any());
-        }
-
-        @Test
-        void verifyIfExceptionIsThrowsWhenItemDoesNotExist() {
-            when(warehouseRepository.findById(testWarehouse.getId()))
-                    .thenReturn(Optional.of(testWarehouse));
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
-            when(itemRepository.findById(100L)).thenReturn(Optional.empty());
-
-            ResourceNotFoundException ex = assertThrows(
-                    ResourceNotFoundException.class, () ->
-                            zoneService.removeItemFromZone(testWarehouse.getId(), 100L, currentUser)
-            );
-
-            assertEquals(
-                    "Item does not exist",
-                    ex.getMessage()
-            );
-            verify(itemRepository, never()).delete(any());
-
-        }
-
-        @Test
-        void verifyIfExceptionIsThrownWhenItemToBeDeletedBelongsToDifferentWarehouse() {
-            Warehouse alternativeWarehouse = new Warehouse();
-            alternativeWarehouse.setId(99L);
-
-            WarehouseZone alternativeZone = new WarehouseZone(
-                    "Other Zone", alternativeWarehouse
-            );
-
-            WarehouseItem mismatchItem = new WarehouseItem(
-                    "Mismatch Item",
-                    "TEST-01",
-                    10L,
-                    alternativeZone
-            );
-
-            mismatchItem.setId(100L);
-
-            when(warehouseRepository.findById(testWarehouse.getId()))
-                    .thenReturn(Optional.of(testWarehouse));
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
-            when(itemRepository.findById(100L)).thenReturn(Optional.of(mismatchItem));
-
-            ResourceNotFoundException ex =
-                    assertThrows(ResourceNotFoundException.class, () ->
-                            zoneService.removeItemFromZone(
-                                    testWarehouse.getId(),
-                                    100L,
-                                    currentUser
-                            )
-                    );
-
-            assertEquals(
-                    "Item does not exist in this warehouse",
-                    ex.getMessage()
-            );
-            verify(itemRepository, never()).delete(any());
         }
     }
 }
