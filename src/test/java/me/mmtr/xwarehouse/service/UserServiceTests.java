@@ -2,6 +2,7 @@ package me.mmtr.xwarehouse.service;
 
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.repository.UserRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,7 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceUnitTests {
+public class UserServiceTests {
     @Mock
     private UserRepository userRepository;
 
@@ -50,9 +51,13 @@ public class UserServiceUnitTests {
         boolean result = userService.createUser(username, rawPassword);
 
         assertTrue(result);
-        verify(userRepository).save(argThat(user ->
-                user.getUsername().equals(username) &&
-                        user.getPassword().equals(encodedPassword)
+
+        verify(userRepository, times(1)).save(argThat(
+                user -> {
+                    if (!user.getUsername().equals(username)) return false;
+                    Assertions.assertNotNull(user.getPassword());
+                    return user.getPassword().equals(encodedPassword);
+                }
         ));
     }
 }

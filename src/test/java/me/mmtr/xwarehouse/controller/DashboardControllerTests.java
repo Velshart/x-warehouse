@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(DashboardController.class)
-public class DashboardControllerUnitTests {
+public class DashboardControllerTests {
 
     @MockitoBean
     private WarehouseService warehouseService;

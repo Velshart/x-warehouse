@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(WarehouseController.class)
-public class WarehouseControllerUnitTests {
+public class WarehouseControllerTests {
 
     @MockitoBean
     private WarehouseService warehouseService;
