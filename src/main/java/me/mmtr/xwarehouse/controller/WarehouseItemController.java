@@ -54,11 +54,18 @@ public class WarehouseItemController {
             @RequestParam String name,
             @RequestParam String sku,
             @RequestParam Long quantity,
+            @RequestParam Long warehouseZoneId,
             RedirectAttributes redirectAttributes
     ) {
         try {
             itemService.updateItemInZone(
-                    warehouseId, itemId, name, sku, quantity, currentUser
+                    warehouseId,
+                    itemId,
+                    name,
+                    sku,
+                    quantity,
+                    warehouseZoneId,
+                    currentUser
             );
 
             redirectAttributes.addFlashAttribute(

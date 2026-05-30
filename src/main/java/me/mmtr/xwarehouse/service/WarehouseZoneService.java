@@ -10,6 +10,8 @@ import me.mmtr.xwarehouse.model.WarehouseZone;
 import me.mmtr.xwarehouse.repository.WarehouseZoneRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class WarehouseZoneService {
 
@@ -24,7 +26,11 @@ public class WarehouseZoneService {
         this.warehouseService = warehouseService;
     }
 
-    public WarehouseZone getZoneByIdAndUser(Long warehouseId, Long zoneId, User currentUser) {
+    public WarehouseZone getZoneByIdAndUser(
+            Long warehouseId,
+            Long zoneId,
+            User currentUser
+    ) {
         Warehouse warehouse
                 = warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
 
@@ -40,6 +46,14 @@ public class WarehouseZoneService {
         }
 
         return warehouseZone;
+    }
+
+    public List<WarehouseZone> getZonesByWarehouseId(
+            Long warehouseId,
+            User currentUser
+    ) {
+        warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
+        return zoneRepository.findAllByWarehouseId(warehouseId);
     }
 
     @Transactional

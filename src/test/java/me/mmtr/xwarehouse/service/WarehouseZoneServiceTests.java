@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -115,6 +116,33 @@ public class WarehouseZoneServiceTests {
                     "Requested zone does not belong to the specified warehouse",
                     ex.getMessage()
             );
+        }
+    }
+
+    @Nested
+    class GetZonesByWarehouseIdTests {
+        private WarehouseZone secondTestZone;
+        @BeforeEach
+        public void setup() {
+            secondTestZone = new WarehouseZone("Zone B",  testWarehouse);
+            secondTestZone.setId(4L);
+        }
+
+        @Test
+        void verifyIfAllZonesAreReturnedCorrectly() {
+            when(zoneRepository.findAllByWarehouseId(testWarehouse.getId()))
+                    .thenReturn(List.of(testZone, secondTestZone));
+
+            List<WarehouseZone> zoneList = zoneService.getZonesByWarehouseId(
+                    testWarehouse.getId(), currentUser
+            );
+
+            assertEquals(2, zoneList.size());
+            assertEquals(testZone.getId(), zoneList.getFirst().getId());
+            assertEquals(secondTestZone.getId(), zoneList.get(1).getId());
+
+            verify(warehouseService, times(1))
+                    .getWarehouseByIdAndUser(testWarehouse.getId(), currentUser);
         }
     }
 

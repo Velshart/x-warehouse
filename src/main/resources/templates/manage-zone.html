@@ -99,6 +99,7 @@
                                         th:data-name="${item.name}"
                                         th:data-sku="${item.sku}"
                                         th:data-quantity="${item.quantity}"
+                                        th:data-zone-id="${item.warehouseZone != null ? item.warehouseZone.id : zone.id}"
                                         onclick="openEditModal(this)"
                                         title="Edit item">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor"
@@ -194,6 +195,16 @@
                        class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm">
             </div>
 
+            <div>
+                <label for="editItemZone" class="block text-xs font-medium text-slate-400 mb-1">Warehouse Zone</label>
+                <select id="editItemZone" name="warehouseZoneId" required
+                        class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-amber-500">
+                    <option th:each="z : ${allZones}"
+                            th:value="${z.id}"
+                            th:text="${z.name}">Zone Name</option>
+                </select>
+            </div>
+
             <div class="flex justify-end space-x-3 pt-2">
                 <button type="button" onclick="closeEditModal()"
                         class="px-4 py-2.5 text-sm font-semibold rounded-lg text-slate-300 bg-slate-700 hover:bg-slate-600 transition">
@@ -214,11 +225,17 @@
         const name = el.dataset.name;
         const sku = el.dataset.sku;
         const quantity = el.dataset.quantity;
+        const zoneId = el.dataset.zoneId;
 
         document.getElementById('editItemId').value = id;
         document.getElementById('editItemName').value = name;
         document.getElementById('editItemSku').value = sku;
         document.getElementById('editItemQty').value = quantity;
+        
+        const zoneSelect = document.getElementById('editItemZone');
+        if (zoneSelect && zoneId) {
+            zoneSelect.value = String(zoneId);
+        }
 
         const modal = document.getElementById('editModal');
         modal.classList.remove('hidden');

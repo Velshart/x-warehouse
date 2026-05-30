@@ -11,6 +11,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/warehouse")
 public class WarehouseZoneController {
@@ -34,6 +36,9 @@ public class WarehouseZoneController {
             Model model
     ) {
         try {
+            List<WarehouseZone> zonesList =
+                    zoneService.getZonesByWarehouseId(warehouseId, currentUser);
+
             WarehouseZone zone = zoneService.getZoneByIdAndUser(
                     warehouseId, zoneId, currentUser
             );
@@ -48,6 +53,7 @@ public class WarehouseZoneController {
                             true
                     );
 
+            model.addAttribute("allZones", zonesList);
             model.addAttribute("currentUser", currentUser);
             model.addAttribute("warehouseId", warehouseId);
             model.addAttribute("warehouseName", warehouse.getName());

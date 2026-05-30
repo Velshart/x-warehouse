@@ -32,6 +32,15 @@ public class WarehouseService {
         this.warehouseMemberRepository = warehouseMemberRepository;
     }
 
+    public Warehouse getWarehouseByIdAndUser(Long warehouseId, User currentUser) {
+        return warehouseRepository.findWarehouseByIdAndUserId(
+                warehouseId,
+                currentUser.getId()
+        ).orElseThrow(() -> new ResourceAccessException(
+                "Access denied"
+        ));
+    }
+
     @Transactional
     public Warehouse createWarehouse(String name, User owner) {
         Warehouse warehouse = new Warehouse(name, owner);
@@ -196,14 +205,5 @@ public class WarehouseService {
 
                     return true;
                 }).orElse(false);
-    }
-
-    public Warehouse getWarehouseByIdAndUser(Long warehouseId, User currentUser) {
-        return warehouseRepository.findWarehouseByIdAndUserId(
-                warehouseId,
-                currentUser.getId()
-        ).orElseThrow(() -> new ResourceAccessException(
-                "Access denied"
-        ));
     }
 }

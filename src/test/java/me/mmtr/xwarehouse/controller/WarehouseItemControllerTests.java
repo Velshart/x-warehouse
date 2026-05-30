@@ -135,6 +135,7 @@ public class WarehouseItemControllerTests {
                                     "quantity",
                                     String.valueOf(testItem.getQuantity())
                             )
+                            .param("warehouseZoneId", "3")
                             .with(user(testUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
@@ -150,6 +151,7 @@ public class WarehouseItemControllerTests {
                     testItem.getName(),
                     testItem.getSku(),
                     testItem.getQuantity(),
+                    testZone.getId(),
                     testUser
             );
         }
@@ -163,6 +165,7 @@ public class WarehouseItemControllerTests {
                             testItem.getName(),
                             testItem.getSku(),
                             testItem.getQuantity(),
+                            testZone.getId(),
                             testUser
                     );
 
@@ -176,6 +179,10 @@ public class WarehouseItemControllerTests {
                             .param(
                                     "quantity",
                                     String.valueOf(testItem.getQuantity())
+                            )
+                            .param(
+                                    "warehouseZoneId",
+                                    String.valueOf(testZone.getId())
                             )
                             .with(user(testUser))
                             .with(csrf()))
