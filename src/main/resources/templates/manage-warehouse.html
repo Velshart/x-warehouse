@@ -69,6 +69,20 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div class="lg:col-span-2 space-y-6">
 
+            <div th:if="${canManage}" class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
+                <h3 class="text-md font-bold text-white mb-3">Create new zone</h3>
+                <form th:action="@{/warehouse/{id}/add-zone(id=${warehouse.id})}" method="post" class="flex flex-col sm:flex-row gap-3">
+                    <div class="flex-1">
+                        <input id="zoneName" name="name" type="text" required
+                               class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 text-sm"
+                               placeholder="example: Cold Storage, Row B">
+                    </div>
+                    <button type="submit" class="sm:w-auto flex justify-center items-center py-2.5 px-5 border border-transparent text-sm font-semibold rounded-lg text-slate-950 bg-amber-500 hover:bg-amber-400 focus:outline-none transition duration-200 shadow-md">
+                        Add zone
+                    </button>
+                </form>
+            </div>
+
             <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
                 <h2 class="text-lg font-bold text-white mb-4">Warehouse zones</h2>
 
@@ -113,20 +127,6 @@
                      class="text-center py-12 border-2 border-dashed border-slate-700/60 rounded-xl">
                     <p class="text-sm text-slate-500">No zones created in this warehouse yet.</p>
                 </div>
-            </div>
-
-            <div th:if="${canManage}" class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
-                <h3 class="text-md font-bold text-white mb-3">Create new zone</h3>
-                <form th:action="@{/warehouse/{id}/add-zone(id=${warehouse.id})}" method="post" class="flex flex-col sm:flex-row gap-3">
-                    <div class="flex-1">
-                        <input id="zoneName" name="name" type="text" required
-                               class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 text-sm"
-                               placeholder="example: Cold Storage, Row B">
-                    </div>
-                    <button type="submit" class="sm:w-auto flex justify-center items-center py-2.5 px-5 border border-transparent text-sm font-semibold rounded-lg text-slate-950 bg-amber-500 hover:bg-amber-400 focus:outline-none transition duration-200 shadow-md">
-                        Add zone
-                    </button>
-                </form>
             </div>
         </div>
 
