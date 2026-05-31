@@ -8,7 +8,6 @@ import me.mmtr.xwarehouse.model.Warehouse;
 import me.mmtr.xwarehouse.model.WarehouseItem;
 import me.mmtr.xwarehouse.model.WarehouseZone;
 import me.mmtr.xwarehouse.repository.WarehouseItemRepository;
-import me.mmtr.xwarehouse.repository.WarehouseRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,9 +34,6 @@ public class WarehouseItemServiceTests {
 
     @Mock
     private WarehouseService warehouseService;
-
-    @Mock
-    private WarehouseRepository warehouseRepository;
 
     @InjectMocks
     private WarehouseItemService itemService;
