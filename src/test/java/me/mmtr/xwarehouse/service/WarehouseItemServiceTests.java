@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,9 +50,8 @@ public class WarehouseItemServiceTests {
         currentUser.setId(1L);
         currentUser.setUsername("testUser");
 
-        testWarehouse = new Warehouse();
+        testWarehouse = new Warehouse("Warehouse 1", currentUser);
         testWarehouse.setId(2L);
-        testWarehouse.setName("Warehouse 1");
 
         testZone = new WarehouseZone("Zone A", testWarehouse);
         testZone.setId(3L);
@@ -62,6 +62,90 @@ public class WarehouseItemServiceTests {
         testItem.setSku("TEST-01");
         testItem.setQuantity(10L);
         testItem.setWarehouseZone(testZone);
+    }
+
+    @Nested
+    class GetItemsByWarehouseIdAndUser {
+        @Test
+        void verifyIfItemsAreCorrectlyReturnedWithValidKeywordParameter() {
+            when(warehouseService.hasAccess(testWarehouse.getId(),
+                    currentUser.getId(),
+                    true
+            )).thenReturn(true);
+
+            when(itemRepository.findAllByZoneIdAndNameOrSkuContaining(
+                    testZone.getId(), "Item"
+            )).thenReturn(List.of(testItem));
+
+            List<WarehouseItem> items = itemService.getItemsByWarehouseIdAndUser(
+                    testWarehouse.getId(),
+                    testZone.getId(),
+                    "Item",
+                    currentUser
+            );
+
+            assertEquals(1, items.size());
+            assertEquals(testItem.getId(), items.getFirst().getId());
+
+            verify(itemRepository, times(1))
+                    .findAllByZoneIdAndNameOrSkuContaining(
+                            testZone.getId(), "Item"
+                    );
+        }
+
+        @Test
+        void verifyIfItemsAreCorrectlyReturnedWithInvalidKeywordParameter() {
+            when(warehouseService.hasAccess(testWarehouse.getId(),
+                    currentUser.getId(),
+                    true
+            )).thenReturn(true);
+
+            when(itemRepository.findAllByWarehouseZoneId(
+                    testZone.getId()
+            )).thenReturn(List.of(testItem));
+
+            List<WarehouseItem> items = itemService.getItemsByWarehouseIdAndUser(
+                    testWarehouse.getId(),
+                    testZone.getId(),
+                    "   ",
+                    currentUser
+            );
+
+            assertEquals(1, items.size());
+            assertEquals(testItem.getId(), items.getFirst().getId());
+
+            verify(itemRepository, times(1))
+                    .findAllByWarehouseZoneId(
+                            testZone.getId()
+                    );
+        }
+
+        @Test
+        void verifyIfItemsAreCorrectlyReturnedWithNullKeywordParameter() {
+            when(warehouseService.hasAccess(testWarehouse.getId(),
+                    currentUser.getId(),
+                    true
+            )).thenReturn(true);
+
+            when(itemRepository.findAllByWarehouseZoneId(
+                    testZone.getId()
+            )).thenReturn(List.of(testItem));
+
+            List<WarehouseItem> items = itemService.getItemsByWarehouseIdAndUser(
+                    testWarehouse.getId(),
+                    testZone.getId(),
+                    null,
+                    currentUser
+            );
+
+            assertEquals(1, items.size());
+            assertEquals(testItem.getId(), items.getFirst().getId());
+
+            verify(itemRepository, times(1))
+                    .findAllByWarehouseZoneId(
+                            testZone.getId()
+                    );
+        }
     }
 
     @Nested

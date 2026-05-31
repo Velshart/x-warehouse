@@ -2,7 +2,9 @@ package me.mmtr.xwarehouse.controller;
 
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
+import me.mmtr.xwarehouse.model.WarehouseItem;
 import me.mmtr.xwarehouse.model.WarehouseZone;
+import me.mmtr.xwarehouse.service.WarehouseItemService;
 import me.mmtr.xwarehouse.service.WarehouseService;
 import me.mmtr.xwarehouse.service.WarehouseZoneService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,13 +20,16 @@ import java.util.List;
 public class WarehouseZoneController {
     private final WarehouseZoneService zoneService;
     private final WarehouseService warehouseService;
+    private final WarehouseItemService itemService;
 
     public WarehouseZoneController(
             WarehouseZoneService warehouseZoneService,
-            WarehouseService warehouseService
+            WarehouseService warehouseService,
+            WarehouseItemService warehouseItemService
     ) {
         this.zoneService = warehouseZoneService;
         this.warehouseService = warehouseService;
+        this.itemService = warehouseItemService;
     }
 
     @GetMapping("/{warehouseId}/zone/{zoneId}")
@@ -32,10 +37,15 @@ public class WarehouseZoneController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long warehouseId,
             @PathVariable Long zoneId,
+            @RequestParam(required = false) String search,
             RedirectAttributes redirectAttributes,
             Model model
     ) {
         try {
+            List<WarehouseItem> items = itemService.getItemsByWarehouseIdAndUser(
+                    warehouseId, zoneId, search, currentUser
+            );
+
             List<WarehouseZone> zonesList =
                     zoneService.getZonesByWarehouseId(
                             warehouseId,
@@ -49,7 +59,9 @@ public class WarehouseZoneController {
 
             Warehouse warehouse = zone.getWarehouse();
 
-            boolean isOwner = warehouse.getOwner().getId().equals(currentUser.getId());
+            boolean isOwner =
+                    warehouse.getOwner().getId().equals(currentUser.getId());
+
             boolean isAdmin = !isOwner &&
                     warehouseService.hasAccess(
                             warehouseId,
@@ -57,16 +69,24 @@ public class WarehouseZoneController {
                             true
                     );
 
+            model.addAttribute("items", items);
             model.addAttribute("allZones", zonesList);
             model.addAttribute("currentUser", currentUser);
             model.addAttribute("warehouseId", warehouseId);
             model.addAttribute("warehouseName", warehouse.getName());
             model.addAttribute("zone", zone);
-            model.addAttribute("canManage", isOwner || isAdmin);
+            model.addAttribute(
+                    "canManage",
+                    isOwner || isAdmin
+            );
+            model.addAttribute("search", search);
 
             return "manage-zone";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "error",
+                    e.getMessage()
+            );
             return "redirect:/warehouse/" + warehouseId;
         }
     }

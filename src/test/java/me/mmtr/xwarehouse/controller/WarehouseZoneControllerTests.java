@@ -4,7 +4,9 @@ import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
+import me.mmtr.xwarehouse.model.WarehouseItem;
 import me.mmtr.xwarehouse.model.WarehouseZone;
+import me.mmtr.xwarehouse.service.WarehouseItemService;
 import me.mmtr.xwarehouse.service.WarehouseService;
 import me.mmtr.xwarehouse.service.WarehouseZoneService;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -30,6 +34,9 @@ public class WarehouseZoneControllerTests {
 
     @MockitoBean
     private WarehouseService warehouseService;
+
+    @MockitoBean
+    private WarehouseItemService itemService;
 
     @Autowired
     private MockMvc mockMvc;
@@ -55,6 +62,19 @@ public class WarehouseZoneControllerTests {
 
     @Nested
     class ViewZoneTests {
+        WarehouseItem testItem;
+
+        @BeforeEach
+        public void setup() {
+            testItem = new WarehouseItem(
+                    "Test Item",
+                    "TEST-01",
+                    5L,
+                    testZone
+            );
+            testItem.setId(4L);
+        }
+
         @Test
         void verifyIfZoneViewIsReturnedCorrectly() throws Exception {
             when(zoneService.getZoneByIdAndUser(
@@ -63,18 +83,43 @@ public class WarehouseZoneControllerTests {
                     testUser
             )).thenReturn(testZone);
 
-            mockMvc.perform(get("/warehouse/" + testWarehouse.getId() + "/zone/" + testZone.getId()).with(user(testUser)))
+            when(itemService.getItemsByWarehouseIdAndUser(
+                    testWarehouse.getId(),
+                    testZone.getId(),
+                    "Test",
+                    testUser
+            )).thenReturn(List.of(testItem));
+
+            when(zoneService.getZonesByWarehouseId(
+                    testWarehouse.getId(),
+                    null,
+                    testUser
+            )).thenReturn(List.of(testZone));
+
+            mockMvc.perform(get("/warehouse/" +
+                            testWarehouse.getId() + "/zone/" +
+                            testZone.getId())
+                            .param("search", "Test")
+                            .with(user(testUser)))
                     .andExpect(status().isOk())
                     .andExpect(view().name("manage-zone"))
-                    .andExpect(model().attributeExists(
-                            "currentUser",
+                    .andExpect(model().attribute("currentUser", testUser))
+                    .andExpect(model().attribute(
                             "warehouseId",
-                            "warehouseName",
-                            "zone",
-                            "canManage"
+                            testWarehouse.getId()
                     ))
+                    .andExpect(model().attribute("warehouseName",
+                            testWarehouse.getName()
+                    ))
+                    .andExpect(model().attribute("zone", testZone))
                     .andExpect(model().attribute(
                             "warehouseName", testWarehouse.getName()
+                    ))
+                    .andExpect(model().attribute(
+                            "items", List.of(testItem)
+                    ))
+                    .andExpect(model().attribute(
+                            "allZones", List.of(testZone)
                     ))
                     .andExpect(model().attribute("canManage", true));
 
@@ -94,9 +139,14 @@ public class WarehouseZoneControllerTests {
                     "Requested zone does not belong to the specified warehouse"
             ));
 
-            mockMvc.perform(get("/warehouse/" + testWarehouse.getId() + "/zone/" + testZone.getId()).with(user(testUser)))
+            mockMvc.perform(get("/warehouse/" +
+                            testWarehouse.getId() +
+                            "/zone/" + testZone.getId())
+                            .with(user(testUser)))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/warehouse/" + testWarehouse.getId()))
+                    .andExpect(redirectedUrl(
+                            "/warehouse/" + testWarehouse.getId()
+                    ))
                     .andExpect(flash().attribute(
                             "error",
                             "Requested zone does not belong" +

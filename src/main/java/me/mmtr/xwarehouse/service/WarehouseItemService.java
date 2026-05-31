@@ -11,29 +11,42 @@ import me.mmtr.xwarehouse.model.WarehouseZone;
 import me.mmtr.xwarehouse.repository.WarehouseItemRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class WarehouseItemService {
 
-    //private final WarehouseZoneRepository zoneRepository;
     private final WarehouseZoneService zoneService;
     private final WarehouseItemRepository itemRepository;
-    //private final WarehouseRepository warehouseRepository;
     private final WarehouseService warehouseService;
 
     public WarehouseItemService(
-            //WarehouseZoneRepository zoneRepository,
             WarehouseZoneService zoneService,
             WarehouseItemRepository itemRepository,
-            //WarehouseRepository warehouseRepository,
             WarehouseService warehouseService
     ) {
-        //this.zoneRepository = zoneRepository;
         this.zoneService = zoneService;
         this.itemRepository = itemRepository;
-        //this.warehouseRepository = warehouseRepository;
         this.warehouseService = warehouseService;
+    }
+
+    public List<WarehouseItem> getItemsByWarehouseIdAndUser(
+            Long warehouseId,
+            Long zoneId,
+            String keyword,
+            User currentUser
+    ) {
+        validateWriteAccess(warehouseId, currentUser);
+
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return itemRepository.findAllByWarehouseZoneId(zoneId);
+        }
+
+        return itemRepository.findAllByZoneIdAndNameOrSkuContaining(
+                zoneId,
+                keyword
+        );
     }
 
     @Transactional
@@ -46,14 +59,6 @@ public class WarehouseItemService {
             User currentUser) {
         validateWriteAccess(warehouseId, currentUser);
 
-//        WarehouseZone zone =
-//                zoneRepository.findById(zoneId)
-//                        .orElseThrow(() ->
-//                                new ResourceNotFoundException(
-//                                        "Zone with name " + name +
-//                                                " does not exist in this warehouse"
-//                                )
-//                        );
         WarehouseZone zone =
                 zoneService.getZoneByIdAndUser(warehouseId, zoneId, currentUser);
 
