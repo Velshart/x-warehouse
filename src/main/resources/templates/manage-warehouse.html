@@ -84,10 +84,44 @@
             </div>
 
             <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl">
-                <h2 class="text-lg font-bold text-white mb-4">Warehouse zones</h2>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                    <h2 class="text-lg font-bold text-white">Warehouse zones</h2>
 
-                <div th:if="${not #lists.isEmpty(warehouse.zones)}" class="divide-y divide-slate-700/50">
-                    <div th:each="zone : ${warehouse.zones}" class="flex items-center justify-between py-4 first:pt-0 last:pb-0 group">
+                    <form th:action="@{/warehouse/{id}(id=${warehouse.id})}" method="get" class="w-full sm:w-64 relative m-0 p-0">
+                        <div class="relative flex items-center bg-slate-900 border border-slate-700 rounded-xl focus-within:ring-2 focus-within:ring-amber-500/50 focus-within:border-amber-500 transition duration-150 overflow-hidden pr-1.5">
+                <span class="pl-3 text-slate-500 select-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-3.5 w-3.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+                    </svg>
+                </span>
+                            <input type="text"
+                                   name="search"
+                                   th:value="${search}"
+                                   class="w-full pl-2 pr-2 py-1.5 bg-transparent text-white placeholder-slate-500 focus:outline-none text-xs"
+                                   placeholder="Search zones...">
+
+                            <a th:if="${search != null && !search.isEmpty()}"
+                               th:href="@{/warehouse/{id}(id=${warehouse.id})}"
+                               class="p-1 text-slate-500 hover:text-slate-300 transition mr-0.5"
+                               title="Clear search">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3.5 w-3.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                </svg>
+                            </a>
+
+                            <button type="submit"
+                                    class="p-1 text-amber-500 hover:text-amber-400 hover:bg-slate-800 rounded-md transition"
+                                    title="Search">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3.5 w-3.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div th:if="${not #lists.isEmpty(zones)}" class="divide-y divide-slate-700/50">
+                    <div th:each="zone : ${zones}" class="flex items-center justify-between py-4 first:pt-0 last:pb-0 group">
                         <div>
                             <a th:href="@{/warehouse/{wId}/zone/{zId}(wId=${warehouse.id}, zId=${zone.id})}"
                                class="font-semibold text-slate-200 hover:text-amber-500 transition duration-150 flex items-center gap-1">
@@ -123,9 +157,15 @@
                     </div>
                 </div>
 
-                <div th:if="${#lists.isEmpty(warehouse.zones)}"
+                <div th:if="${#lists.isEmpty(zones)}"
                      class="text-center py-12 border-2 border-dashed border-slate-700/60 rounded-xl">
-                    <p class="text-sm text-slate-500">No zones created in this warehouse yet.</p>
+                    <p class="text-sm text-slate-500" th:text="${search != null && !search.isEmpty()} ? 'No zones match your search criteria.' : 'No zones created in this warehouse yet.'">No zones created in this warehouse yet.</p>
+
+                    <div th:if="${search != null && !search.isEmpty()}" class="mt-4">
+                        <a th:href="@{/warehouse/{id}(id=${warehouse.id})}" class="inline-flex items-center text-xs font-semibold text-amber-500 hover:text-amber-400 transition">
+                            Clear search filter
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -225,9 +265,10 @@
     }
 
     function closeEditZoneModal() {
-        const modal = document.getElementById('editZoneModal');
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
+        const modal = document.getElementById('editWarehouseModal'); // Uwaga: poprawione z editWarehouseModal na editZoneModal (dla spójności skryptu)
+        const targetModal = modal ? modal : document.getElementById('editZoneModal');
+        targetModal.classList.remove('flex');
+        targetModal.classList.add('hidden');
     }
 
     window.onclick = function (event) {

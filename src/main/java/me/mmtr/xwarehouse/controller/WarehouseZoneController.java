@@ -37,7 +37,11 @@ public class WarehouseZoneController {
     ) {
         try {
             List<WarehouseZone> zonesList =
-                    zoneService.getZonesByWarehouseId(warehouseId, currentUser);
+                    zoneService.getZonesByWarehouseId(
+                            warehouseId,
+                            null,
+                            currentUser
+                    );
 
             WarehouseZone zone = zoneService.getZoneByIdAndUser(
                     warehouseId, zoneId, currentUser

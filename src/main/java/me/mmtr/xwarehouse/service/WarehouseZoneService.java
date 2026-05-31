@@ -50,10 +50,20 @@ public class WarehouseZoneService {
 
     public List<WarehouseZone> getZonesByWarehouseId(
             Long warehouseId,
+            String keyword,
             User currentUser
     ) {
+        // checks whether the provided user has the required permissions
         warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
-        return zoneRepository.findAllByWarehouseId(warehouseId);
+
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return zoneRepository.findAllByWarehouseId(warehouseId);
+        }
+
+        return zoneRepository.findAllByWarehouseIdAndNameContaining(
+                warehouseId,
+                keyword
+        );
     }
 
     @Transactional

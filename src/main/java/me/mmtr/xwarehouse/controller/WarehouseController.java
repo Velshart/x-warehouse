@@ -2,34 +2,50 @@ package me.mmtr.xwarehouse.controller;
 
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
+import me.mmtr.xwarehouse.model.WarehouseZone;
 import me.mmtr.xwarehouse.model.enums.WarehouseRole;
 import me.mmtr.xwarehouse.service.WarehouseService;
+import me.mmtr.xwarehouse.service.WarehouseZoneService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/warehouse")
 public class WarehouseController {
 
     private final WarehouseService warehouseService;
+    private final WarehouseZoneService zoneService;
 
-    public WarehouseController(WarehouseService warehouseService) {
+    public WarehouseController(
+            WarehouseService warehouseService,
+            WarehouseZoneService zoneService
+    ) {
         this.warehouseService = warehouseService;
+        this.zoneService = zoneService;
     }
 
     @GetMapping("/{id}")
     public String warehouse(
             @AuthenticationPrincipal User currentUser,
             @PathVariable(name = "id") Long id,
+            @RequestParam(required = false) String search,
             RedirectAttributes redirectAttributes,
             Model model
     ) {
         try {
             Warehouse warehouse =
                     warehouseService.getWarehouseByIdAndUser(id, currentUser);
+
+            List<WarehouseZone> zones = zoneService.getZonesByWarehouseId(
+                    warehouse.getId(),
+                    search,
+                    currentUser
+            );
 
             boolean isOwner = warehouse.getOwner().getId().equals(currentUser.getId());
 
@@ -38,10 +54,12 @@ public class WarehouseController {
             boolean isViewer = !isOwner && !isAdmin;
 
             model.addAttribute("currentUser", currentUser);
+            model.addAttribute("zones", zones);
             model.addAttribute("isOwner", isOwner);
             model.addAttribute("isAdmin", isAdmin);
             model.addAttribute("isViewer", isViewer);
             model.addAttribute("canManage", isOwner || isAdmin);
+            model.addAttribute("search", search);
 
             model.addAttribute("warehouse", warehouse);
 

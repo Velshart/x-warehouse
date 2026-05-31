@@ -122,19 +122,21 @@ public class WarehouseZoneServiceTests {
     @Nested
     class GetZonesByWarehouseIdTests {
         private WarehouseZone secondTestZone;
+
         @BeforeEach
         public void setup() {
-            secondTestZone = new WarehouseZone("Zone B",  testWarehouse);
+            secondTestZone = new WarehouseZone("Zone B", testWarehouse);
             secondTestZone.setId(4L);
         }
 
         @Test
-        void verifyIfAllZonesAreReturnedCorrectly() {
-            when(zoneRepository.findAllByWarehouseId(testWarehouse.getId()))
-                    .thenReturn(List.of(testZone, secondTestZone));
+        void verifyIfAllZonesAreReturnedCorrectlyWithValidKeywordAttribute() {
+            when(zoneRepository.findAllByWarehouseIdAndNameContaining(
+                    testWarehouse.getId(), "Zone"
+            )).thenReturn(List.of(testZone, secondTestZone));
 
             List<WarehouseZone> zoneList = zoneService.getZonesByWarehouseId(
-                    testWarehouse.getId(), currentUser
+                    testWarehouse.getId(), "Zone", currentUser
             );
 
             assertEquals(2, zoneList.size());
@@ -143,6 +145,54 @@ public class WarehouseZoneServiceTests {
 
             verify(warehouseService, times(1))
                     .getWarehouseByIdAndUser(testWarehouse.getId(), currentUser);
+
+            verify(zoneRepository, times(1))
+                    .findAllByWarehouseIdAndNameContaining(
+                            testWarehouse.getId(), "Zone"
+                    );
+        }
+
+        @Test
+        void verifyIfAllZonesAreReturnedCorrectlyWithInvalidAttribute() {
+            when(zoneRepository.findAllByWarehouseId(testWarehouse.getId()))
+                    .thenReturn(List.of(testZone, secondTestZone));
+
+            List<WarehouseZone> zoneList = zoneService.getZonesByWarehouseId(
+                    testWarehouse.getId(), "    ", currentUser
+            );
+
+            assertEquals(2, zoneList.size());
+            assertEquals(testZone.getId(), zoneList.getFirst().getId());
+            assertEquals(secondTestZone.getId(), zoneList.get(1).getId());
+
+            verify(warehouseService, times(1))
+                    .getWarehouseByIdAndUser(testWarehouse.getId(), currentUser);
+
+            verify(zoneRepository, times(1))
+                    .findAllByWarehouseId(testWarehouse.getId()
+            );
+        }
+
+
+        @Test
+        void verifyIfAllZonesAreReturnedCorrectlyWithNullKeywordAttribute() {
+            when(zoneRepository.findAllByWarehouseId(testWarehouse.getId()))
+                    .thenReturn(List.of(testZone, secondTestZone));
+
+            List<WarehouseZone> zoneList = zoneService.getZonesByWarehouseId(
+                    testWarehouse.getId(), null, currentUser
+            );
+
+            assertEquals(2, zoneList.size());
+            assertEquals(testZone.getId(), zoneList.getFirst().getId());
+            assertEquals(secondTestZone.getId(), zoneList.get(1).getId());
+
+            verify(warehouseService, times(1))
+                    .getWarehouseByIdAndUser(testWarehouse.getId(), currentUser);
+
+            verify(zoneRepository, times(1))
+                    .findAllByWarehouseId(testWarehouse.getId()
+            );
         }
     }
 

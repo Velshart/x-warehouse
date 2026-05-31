@@ -5,8 +5,10 @@ import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
+import me.mmtr.xwarehouse.model.WarehouseZone;
 import me.mmtr.xwarehouse.model.enums.WarehouseRole;
 import me.mmtr.xwarehouse.service.WarehouseService;
+import me.mmtr.xwarehouse.service.WarehouseZoneService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -27,6 +31,9 @@ public class WarehouseControllerTests {
 
     @MockitoBean
     private WarehouseService warehouseService;
+
+    @MockitoBean
+    private WarehouseZoneService zoneService;
 
     private User currentUser;
     private User ownerUser;
@@ -51,12 +58,27 @@ public class WarehouseControllerTests {
 
     @Nested
     class WarehouseViewTests {
+        private WarehouseZone testZone;
+
+        @BeforeEach
+        public void setup() {
+            testZone = new WarehouseZone("Zone A", warehouse);
+            testZone.setId(4L);
+        }
+
         @Test
         void verifyIfWarehouseViewIsReturnedCorrectly() throws Exception {
             when(warehouseService.getWarehouseByIdAndUser(
                     warehouse.getId(), ownerUser)).thenReturn(warehouse);
 
+            when(zoneService.getZonesByWarehouseId(
+                    warehouse.getId(),
+                    "Zone A",
+                    ownerUser
+            )).thenReturn(List.of(testZone));
+
             mockMvc.perform(get("/warehouse/" + warehouse.getId())
+                            .param("search", testZone.getName())
                             .with(user(ownerUser)))
                     .andExpect(status().isOk())
                     .andExpect(view().name("manage-warehouse"))
@@ -64,6 +86,7 @@ public class WarehouseControllerTests {
                     .andExpect(model().attribute("isOwner", true))
                     .andExpect(model().attribute("isAdmin", false))
                     .andExpect(model().attribute("canManage", true))
+                    .andExpect(model().attribute("zones", List.of(testZone)))
                     .andExpect(model().attribute("warehouse", warehouse));
         }
 
