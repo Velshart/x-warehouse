@@ -81,25 +81,67 @@ public class WarehouseServiceTests {
         }
 
         @Test
-        public void verifyIfAvailableWarehousesWereReturnedCorrectly() {
+        public void verifyIfAvailableWarehousesAreReturnedCorrectlyWithValidKeyword() {
             List<Warehouse> warehouses = List.of(warehouse);
-
-            when(warehouseRepository.findAllAccessibleByUserId(owner.getId()))
-                    .thenReturn(warehouses);
+            when(warehouseRepository.findAllAccessibleByUserIdAndNameContaining(
+                    owner.getId(), warehouse.getName())
+            ).thenReturn(warehouses);
 
             List<Warehouse> availableWarehouses =
-                    warehouseService.getAvailableWarehouses(owner.getId());
+                    warehouseService.getAvailableWarehouses(
+                            owner.getId(), warehouse.getName()
+                    );
 
             assertEquals(1, availableWarehouses.size());
-            assertEquals(
-                    warehouse.getName(),
-                    availableWarehouses.getFirst().getName()
-            );
+            assertEquals(warehouse.getId(), availableWarehouses.getFirst().getId());
 
-            verify(
-                    warehouseRepository,
-                    times(1)
-            ).findAllAccessibleByUserId(owner.getId());
+            verify(warehouseRepository, times(1))
+                    .findAllAccessibleByUserIdAndNameContaining(
+                            owner.getId(),
+                            warehouse.getName()
+                    );
+        }
+
+        @Test
+        public void verifyIfAvailableWarehousesAreReturnedCorrectlyWithInvalidKeyword() {
+            List<Warehouse> warehouses = List.of(warehouse);
+            when(warehouseRepository.findAllAccessibleByUserId(
+                    owner.getId())
+            ).thenReturn(warehouses);
+
+            List<Warehouse> availableWarehouses =
+                    warehouseService.getAvailableWarehouses(
+                            owner.getId(), "      "
+                    );
+
+            assertEquals(1, availableWarehouses.size());
+            assertEquals(warehouse.getId(), availableWarehouses.getFirst().getId());
+
+            verify(warehouseRepository, times(1))
+                    .findAllAccessibleByUserId(
+                            owner.getId()
+                    );
+        }
+
+        @Test
+        public void verifyIfAvailableWarehousesAreReturnedCorrectlyWithNullKeyword() {
+            List<Warehouse> warehouses = List.of(warehouse);
+            when(warehouseRepository.findAllAccessibleByUserId(
+                    owner.getId())
+            ).thenReturn(warehouses);
+
+            List<Warehouse> availableWarehouses =
+                    warehouseService.getAvailableWarehouses(
+                            owner.getId(), null
+                    );
+
+            assertEquals(1, availableWarehouses.size());
+            assertEquals(warehouse.getId(), availableWarehouses.getFirst().getId());
+
+            verify(warehouseRepository, times(1))
+                    .findAllAccessibleByUserId(
+                            owner.getId()
+                    );
         }
     }
 

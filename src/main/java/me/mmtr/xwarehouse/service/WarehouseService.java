@@ -48,8 +48,14 @@ public class WarehouseService {
         return warehouseRepository.save(warehouse);
     }
 
-    public List<Warehouse> getAvailableWarehouses(Long userId) {
-        return warehouseRepository.findAllAccessibleByUserId(userId);
+    public List<Warehouse> getAvailableWarehouses(Long userId, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return warehouseRepository.findAllAccessibleByUserId(userId);
+        }
+
+        return warehouseRepository.findAllAccessibleByUserIdAndNameContaining(
+                userId, keyword
+        );
     }
 
     @Transactional

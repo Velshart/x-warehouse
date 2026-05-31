@@ -39,14 +39,40 @@ public class DashboardControllerTests {
     @Nested
     class DashboardViewTests {
         @Test
-        void verifyIfViewWithWarehousesIsReturnedCorrectly() throws Exception {
+        void verifyIfViewWithWarehousesIsReturnedCorrectlyWithSearchParam() throws Exception {
             List<Warehouse> warehouses = List.of(
                     new Warehouse("Warehouse 1", testUser),
                     new Warehouse("Warehouse 2", testUser)
             );
 
-            when(warehouseService.getAvailableWarehouses(testUser.getId()))
-                    .thenReturn(warehouses);
+            when(warehouseService.getAvailableWarehouses(
+                    testUser.getId(),
+                    "Warehouse"
+            )).thenReturn(warehouses);
+
+            mockMvc.perform(get("/dashboard")
+                            .param("search", "Warehouse")
+                            .with(user(testUser)))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("dashboard"))
+                    .andExpect(model().attribute("warehouses", warehouses))
+                    .andExpect(model().attribute("currentUser", testUser));
+
+            verify(warehouseService, times(1))
+                    .getAvailableWarehouses(testUser.getId(), "Warehouse");
+        }
+
+        @Test
+        void verifyIfViewWithWarehousesIsReturnedCorrectlyWithoutSearchParam() throws Exception {
+            List<Warehouse> warehouses = List.of(
+                    new Warehouse("Warehouse 1", testUser),
+                    new Warehouse("Warehouse 2", testUser)
+            );
+
+            when(warehouseService.getAvailableWarehouses(
+                    testUser.getId(),
+                    null
+            )).thenReturn(warehouses);
 
             mockMvc.perform(get("/dashboard")
                             .with(user(testUser)))
@@ -56,7 +82,7 @@ public class DashboardControllerTests {
                     .andExpect(model().attribute("currentUser", testUser));
 
             verify(warehouseService, times(1))
-                    .getAvailableWarehouses(testUser.getId());
+                    .getAvailableWarehouses(testUser.getId(), null);
         }
     }
 }

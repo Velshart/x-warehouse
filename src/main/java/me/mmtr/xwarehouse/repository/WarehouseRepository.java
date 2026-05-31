@@ -22,6 +22,16 @@ public interface WarehouseRepository extends
     )
     List<Warehouse> findAllAccessibleByUserId(@Param("userId") Long userId);
 
+    @Query(
+            "SELECT DISTINCT w FROM Warehouse w" +
+                    " LEFT JOIN w.members m" +
+                    " WHERE (w.owner.id = :userId OR m.user.id = :userId)" +
+                    " AND LOWER(w.name) LIKE LOWER(CONCAT('%', :keyword, '%'))"
+    )
+    List<Warehouse> findAllAccessibleByUserIdAndNameContaining(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword
+    );
 
     @Query(
             "SELECT w FROM Warehouse w " +
