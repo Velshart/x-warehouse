@@ -17,7 +17,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-public class WarehouseRepositoryIntegrationTests {
+public class WarehouseRepositoryTests {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -49,31 +49,34 @@ public class WarehouseRepositoryIntegrationTests {
         entityManager.flush();
     }
 
-    @Test
-    void verifyIfAllAccessibleWarehousesForGivenUserAreReturned() {
-        Warehouse otherWarehouse =
-                new Warehouse("Other Warehouse", stranger);
+    @Nested
+    class FindAllAccessibleByUserId {
+        @Test
+        void verifyIfAllAccessibleWarehousesForGivenUserAreReturned() {
+            Warehouse otherWarehouse =
+                    new Warehouse("Other Warehouse", stranger);
 
-        entityManager.persist(otherWarehouse);
-        entityManager.flush();
+            entityManager.persist(otherWarehouse);
+            entityManager.flush();
 
-        List<Warehouse> ownerWarehouses =
-                warehouseRepository.findAllAccessibleByUserId(owner.getId());
+            List<Warehouse> ownerWarehouses =
+                    warehouseRepository.findAllAccessibleByUserId(owner.getId());
 
-        List<Warehouse> memberWarehouses =
-                warehouseRepository.findAllAccessibleByUserId(member.getId());
+            List<Warehouse> memberWarehouses =
+                    warehouseRepository.findAllAccessibleByUserId(member.getId());
 
-        assertEquals(1, ownerWarehouses.size());
-        assertEquals(
-                "Main Warehouse",
-                ownerWarehouses.getFirst().getName()
-        );
+            assertEquals(1, ownerWarehouses.size());
+            assertEquals(
+                    "Main Warehouse",
+                    ownerWarehouses.getFirst().getName()
+            );
 
-        assertEquals(1, memberWarehouses.size());
-        assertEquals(
-                "Main Warehouse",
-                memberWarehouses.getFirst().getName()
-        );
+            assertEquals(1, memberWarehouses.size());
+            assertEquals(
+                    "Main Warehouse",
+                    memberWarehouses.getFirst().getName()
+            );
+        }
     }
 
     @Nested
@@ -124,6 +127,47 @@ public class WarehouseRepositoryIntegrationTests {
                     .findWarehouseByIdAndUserId(999L, owner.getId());
 
             assertTrue(foundWarehouse.isEmpty());
+        }
+    }
+
+    @Nested
+    class FindAllAccessibleByUserIdAndNameContaining {
+        @Test
+        void verifyIfAllAccessibleWarehousesForGivenUserByUserIdAndNameContainingKeywordAreReturned() {
+            List<Warehouse> ownerWarehouses =
+                    warehouseRepository.findAllAccessibleByUserIdAndNameContaining(
+                            owner.getId(),
+                            "Main"
+                    );
+
+            List<Warehouse> memberWarehouses =
+                    warehouseRepository.findAllAccessibleByUserIdAndNameContaining(
+                            member.getId(),
+                            "Main"
+                    );
+
+            assertEquals(1, ownerWarehouses.size());
+            assertEquals(warehouse.getName(), ownerWarehouses.getFirst().getName());
+
+            assertEquals(1, memberWarehouses.size());
+            assertEquals(warehouse.getName(), memberWarehouses.getFirst().getName());
+        }
+
+        @Test
+        void verifyNoWarehousesAreReturnedWhenNoWarehouseNameContainsKeyword() {
+            List<Warehouse> ownerWarehouses =
+                    warehouseRepository.findAllAccessibleByUserIdAndNameContaining(
+                            owner.getId(),
+                            "RANDOM-KEYWORD"
+                    );
+
+            List<Warehouse> memberWarehouses =
+                    warehouseRepository.findAllAccessibleByUserIdAndNameContaining(
+                            owner.getId(),
+                            "RANDOM-KEYWORD"
+                    );
+            assertEquals(0, ownerWarehouses.size());
+            assertEquals(0, memberWarehouses.size());
         }
     }
 }
