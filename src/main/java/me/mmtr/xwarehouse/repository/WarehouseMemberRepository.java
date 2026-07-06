@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface WarehouseMemberRepository extends
-        JpaRepository<@NonNull WarehouseMember, @NonNull Integer> {
+        JpaRepository<@NonNull WarehouseMember, @NonNull Long> {
 
     Optional<WarehouseMember> findByWarehouseIdAndUserId(
             @NonNull Long warehouseId,
