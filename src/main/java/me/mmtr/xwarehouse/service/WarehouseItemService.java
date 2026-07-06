@@ -37,7 +37,8 @@ public class WarehouseItemService {
             String keyword,
             User currentUser
     ) {
-        validateWriteAccess(warehouseId, currentUser);
+        // checks whether the provided user has the required permissions
+        warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
 
         if (keyword == null || keyword.trim().isEmpty()) {
             return itemRepository.findAllByWarehouseZoneId(zoneId);
