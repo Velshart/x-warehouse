@@ -68,11 +68,6 @@ public class WarehouseItemServiceTests {
     class GetItemsByWarehouseIdAndUser {
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithValidKeywordParameter() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(itemRepository.findAllByZoneIdAndNameOrSkuContaining(
                     testZone.getId(), "Item"
             )).thenReturn(List.of(testItem));
@@ -95,11 +90,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithInvalidKeywordParameter() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(itemRepository.findAllByWarehouseZoneId(
                     testZone.getId()
             )).thenReturn(List.of(testItem));
@@ -122,11 +112,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithNullKeywordParameter() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(itemRepository.findAllByWarehouseZoneId(
                     testZone.getId()
             )).thenReturn(List.of(testItem));
