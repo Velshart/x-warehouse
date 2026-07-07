@@ -1,5 +1,8 @@
 package me.mmtr.xwarehouse.controller;
 
+import me.mmtr.xwarehouse.exception.BusinessValidationException;
+import me.mmtr.xwarehouse.exception.ResourceAccessException;
+import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
 import me.mmtr.xwarehouse.model.WarehouseItem;
@@ -82,7 +85,7 @@ public class WarehouseZoneController {
             model.addAttribute("search", search);
 
             return "manage-zone";
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     e.getMessage()
@@ -104,7 +107,7 @@ public class WarehouseZoneController {
                     "success",
                     "New zone added successfully."
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/warehouse/" + warehouseId;
@@ -125,7 +128,7 @@ public class WarehouseZoneController {
                     "success",
                     "Zone updated successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     e.getMessage()
@@ -147,7 +150,7 @@ public class WarehouseZoneController {
                     "success",
                     "Zone deleted successfully."
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     e.getMessage()

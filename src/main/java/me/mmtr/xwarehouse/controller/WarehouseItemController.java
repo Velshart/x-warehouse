@@ -1,5 +1,8 @@
 package me.mmtr.xwarehouse.controller;
 
+import me.mmtr.xwarehouse.exception.BusinessValidationException;
+import me.mmtr.xwarehouse.exception.ResourceAccessException;
+import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.service.WarehouseItemService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -39,7 +42,7 @@ public class WarehouseItemController {
                     "success",
                     "Item registered successfully."
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/warehouse/" + warehouseId + "/zone/" + zoneId;
@@ -72,7 +75,7 @@ public class WarehouseItemController {
                     "success",
                     "Item updated successfully."
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error", e.getMessage()
             );
@@ -91,7 +94,7 @@ public class WarehouseItemController {
         try {
             itemService.removeItemFromZone(warehouseId, itemId, currentUser);
             redirectAttributes.addFlashAttribute("success", "Item removed successfully.");
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/warehouse/" + warehouseId + "/zone/" + zoneId;

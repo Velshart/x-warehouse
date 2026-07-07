@@ -1,5 +1,8 @@
 package me.mmtr.xwarehouse.controller;
 
+import me.mmtr.xwarehouse.exception.BusinessValidationException;
+import me.mmtr.xwarehouse.exception.ResourceAccessException;
+import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.service.WarehouseContractorService;
 import me.mmtr.xwarehouse.service.WarehouseService;
@@ -72,7 +75,7 @@ public class WarehouseContractorController {
                     "success",
                     "Contractor added successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     e.getMessage()
@@ -102,7 +105,7 @@ public class WarehouseContractorController {
                     "success",
                     "Contractor updated successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     e.getMessage()
@@ -124,7 +127,7 @@ public class WarehouseContractorController {
                     "success",
                     "Contractor deleted successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     e.getMessage()

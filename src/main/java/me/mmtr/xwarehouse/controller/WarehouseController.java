@@ -1,5 +1,8 @@
 package me.mmtr.xwarehouse.controller;
 
+import me.mmtr.xwarehouse.exception.BusinessValidationException;
+import me.mmtr.xwarehouse.exception.ResourceAccessException;
+import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
 import me.mmtr.xwarehouse.model.WarehouseZone;
@@ -64,7 +67,7 @@ public class WarehouseController {
             model.addAttribute("warehouse", warehouse);
 
             return "manage-warehouse";
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
 
             return "redirect:/dashboard";
@@ -89,7 +92,7 @@ public class WarehouseController {
                     "success",
                     "Warehouse created successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
 
@@ -109,7 +112,7 @@ public class WarehouseController {
                     "success",
                     "Warehouse updated successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/dashboard";
@@ -127,7 +130,7 @@ public class WarehouseController {
                     "success",
                     "Warehouse deleted successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
 
@@ -151,7 +154,7 @@ public class WarehouseController {
                     "success",
                     "New member added successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     e.getMessage()
@@ -174,7 +177,7 @@ public class WarehouseController {
                     "success",
                     "Member removed successfully"
             );
-        } catch (Exception e) {
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute(
                     "error",
                     e.getMessage()
