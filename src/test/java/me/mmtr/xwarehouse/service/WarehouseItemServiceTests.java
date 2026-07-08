@@ -19,8 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -65,9 +64,87 @@ public class WarehouseItemServiceTests {
     }
 
     @Nested
-    class GetItemsByWarehouseIdAndUser {
+    class getItemByIdAndWarehouseIdTests {
+
+        @Test
+        void verifyIfItemIsCorrectlyReturned() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false)
+            ).thenReturn(true);
+
+            when(itemRepository.findByIdAndWarehouseZoneWarehouseId(
+                    testItem.getId(), testWarehouse.getId()
+            )).thenReturn(Optional.of(testItem));
+
+            WarehouseItem item = itemService.getItemByIdAndWarehouseId(
+                    testItem.getId(), testWarehouse.getId(), currentUser
+            );
+
+            assertNotNull(item);
+            assertEquals(testItem.getId(), item.getId());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenNoReadAccess() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false)
+            ).thenReturn(false);
+
+            ResourceAccessException ex = assertThrows(ResourceAccessException.class,
+                    () -> itemService.getItemByIdAndWarehouseId(
+                            testItem.getId(),
+                            testWarehouse.getId(),
+                            currentUser
+                    )
+            );
+
+            assertEquals("You are not permitted to perform" +
+                    " modifications in this warehouse",
+                    ex.getMessage()
+            );
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenNoItemFound() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false)
+            ).thenReturn(true);
+
+            when(itemRepository.findByIdAndWarehouseZoneWarehouseId(
+                    testItem.getId(), testWarehouse.getId()
+            )).thenReturn(Optional.empty());
+
+            ResourceNotFoundException ex = assertThrows(
+                    ResourceNotFoundException.class,
+                    () -> itemService.getItemByIdAndWarehouseId(
+                    testItem.getId(),
+                    testWarehouse.getId(),
+                    currentUser)
+            );
+
+            assertEquals(
+                    "Item with provided id not found",
+                    ex.getMessage()
+            );
+        }
+    }
+
+    @Nested
+    class GetItemsByWarehouseIdAndUserTests {
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithValidKeywordParameter() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false)
+            ).thenReturn(true);
+
             when(itemRepository.findAllByZoneIdAndNameOrSkuContaining(
                     testZone.getId(), "Item"
             )).thenReturn(List.of(testItem));
@@ -90,6 +167,12 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithInvalidKeywordParameter() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false)
+            ).thenReturn(true);
+
             when(itemRepository.findAllByWarehouseZoneId(
                     testZone.getId()
             )).thenReturn(List.of(testItem));
@@ -112,6 +195,12 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithNullKeywordParameter() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false)
+            ).thenReturn(true);
+
             when(itemRepository.findAllByWarehouseZoneId(
                     testZone.getId()
             )).thenReturn(List.of(testItem));

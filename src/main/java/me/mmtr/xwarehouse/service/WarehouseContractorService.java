@@ -11,6 +11,7 @@ import me.mmtr.xwarehouse.repository.WarehouseContractorRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class WarehouseContractorService {
@@ -32,6 +33,25 @@ public class WarehouseContractorService {
     ) {
         validateReadAccess(warehouseId, currentUser);
         return contractorRepository.findAllByWarehouseId(warehouseId);
+    }
+
+    public WarehouseContractor getContractorById(
+            Long warehouseId,
+            Long contractorId,
+            User currentUser
+    ) {
+        validateReadAccess(warehouseId, currentUser);
+
+        Optional<WarehouseContractor> contractorOptional =
+                contractorRepository.findByIdAndWarehouseId(
+                        contractorId,
+                        warehouseId
+                );
+
+        if (contractorOptional.isPresent()) {
+            return contractorOptional.get();
+        }
+        throw new ResourceNotFoundException("Contractor with provided id not found");
     }
 
     @Transactional

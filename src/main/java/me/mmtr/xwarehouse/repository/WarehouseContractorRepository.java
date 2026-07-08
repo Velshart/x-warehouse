@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface WarehouseContractorRepository extends JpaRepository<@NonNull WarehouseContractor, @NonNull Long> {
-
-    List<WarehouseContractor> findAllByWarehouseId(Long warehouseId);
+public interface WarehouseContractorRepository extends JpaRepository<@NonNull WarehouseContractor, @NonNull Long> { List<WarehouseContractor> findAllByWarehouseId(Long warehouseId);
 
     Optional<WarehouseContractor> findByIdAndWarehouseId(Long id, Long warehouseId);
 

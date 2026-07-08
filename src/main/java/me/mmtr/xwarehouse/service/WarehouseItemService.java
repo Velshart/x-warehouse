@@ -31,6 +31,34 @@ public class WarehouseItemService {
         this.warehouseService = warehouseService;
     }
 
+    public WarehouseItem getItemByIdAndWarehouseId(
+            Long itemId,
+            Long warehouseId,
+            User currentUser
+    ) {
+        validateReadAccess(warehouseId, currentUser);
+
+        Optional<WarehouseItem> itemOptional =
+                itemRepository.findByIdAndWarehouseZoneWarehouseId(
+                        itemId,
+                        warehouseId
+                );
+
+        if (itemOptional.isPresent()) {
+            return itemOptional.get();
+        }
+
+        throw new ResourceNotFoundException("Item with provided id not found");
+    }
+
+    public List<WarehouseItem> getItemsByWarehouseId(
+            Long warehouseId,
+            User currentUser
+    ) {
+        validateReadAccess(warehouseId, currentUser);
+        return itemRepository.findAllByWarehouseZoneWarehouseId(warehouseId);
+    }
+
     public List<WarehouseItem> getItemsByWarehouseIdAndUser(
             Long warehouseId,
             Long zoneId,
@@ -38,7 +66,8 @@ public class WarehouseItemService {
             User currentUser
     ) {
         // checks whether the provided user has the required permissions
-        warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
+        //warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
+        validateReadAccess(warehouseId, currentUser);
 
         if (keyword == null || keyword.trim().isEmpty()) {
             return itemRepository.findAllByWarehouseZoneId(zoneId);
@@ -145,6 +174,15 @@ public class WarehouseItemService {
         }
 
         itemRepository.delete(warehouseItem);
+    }
+
+    private void validateReadAccess(Long warehouseId, User currentUser) {
+        if (!warehouseService.hasAccess(warehouseId, currentUser.getId(), false)) {
+            throw new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            );
+        }
     }
 
     private void validateWriteAccess(Long warehouseId, User currentUser) {

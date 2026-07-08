@@ -18,8 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,14 +35,14 @@ public class WarehouseContractorServiceTests {
 
     private WarehouseContractor testContractor;
     private Warehouse testWarehouse;
-    private User testUser;
+    private User currentUser;
 
     @BeforeEach
     public void setup() {
-        testUser = new User("Test User", "Password");
-        testUser.setId(1L);
+        currentUser = new User("Test User", "Password");
+        currentUser.setId(1L);
 
-        testWarehouse = new Warehouse("Test Warehouse", testUser);
+        testWarehouse = new Warehouse("Test Warehouse", currentUser);
         testWarehouse.setId(2L);
 
         testContractor = new WarehouseContractor(
@@ -63,7 +62,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfContractorsAreCorrectlyReturned() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     false
             )).thenReturn(true);
 
@@ -73,7 +72,7 @@ public class WarehouseContractorServiceTests {
             List<WarehouseContractor> contractors =
                     contractorService.getContractorsByWarehouseId(
                             testWarehouse.getId(),
-                            testUser
+                            currentUser
                     );
 
             assertEquals(1, contractors.size());
@@ -82,14 +81,85 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceAccessExceptionIsThrownWhenNoReadAccess() {
-            when(warehouseService.hasAccess(testWarehouse.getId(), testUser.getId(), false))
+            when(warehouseService.hasAccess(testWarehouse.getId(), currentUser.getId(), false))
                     .thenReturn(false);
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
-                    contractorService.getContractorsByWarehouseId(testWarehouse.getId(), testUser)
+                    contractorService.getContractorsByWarehouseId(testWarehouse.getId(), currentUser)
             );
 
             verify(contractorRepository, never()).findAllByWarehouseId(any());
+            assertEquals("You are not permitted to perform" +
+                    " modifications in this warehouse", ex.getMessage()
+            );
+        }
+    }
+
+    @Nested
+    class GetContractorByIdTests {
+        @Test
+        void verifyIfContractorIsCorrectlyReturned() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false
+            )).thenReturn(true);
+
+            when(contractorRepository.findByIdAndWarehouseId(
+                    testContractor.getId(),
+                    testWarehouse.getId())
+            ).thenReturn(Optional.of(testContractor));
+
+            WarehouseContractor contractor = contractorService.getContractorById(
+                    testWarehouse.getId(), testContractor.getId(), currentUser
+            );
+
+            assertNotNull(contractor);
+            assertEquals(testContractor.getId(), contractor.getId());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenContractorNotFound() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false
+            )).thenReturn(true);
+
+            when(contractorRepository.findByIdAndWarehouseId(
+                    testContractor.getId(),
+                    testWarehouse.getId())
+            ).thenReturn(Optional.empty());
+
+            ResourceNotFoundException ex =
+                    assertThrows(ResourceNotFoundException.class, () ->
+                            contractorService.getContractorById(
+                                    testWarehouse.getId(),
+                                    testContractor.getId(),
+                                    currentUser
+                            ));
+
+            assertEquals(
+                    "Contractor with provided id not found",
+                    ex.getMessage()
+            );
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenNoReadAccess() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false
+            )).thenReturn(false);
+
+            ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
+                    contractorService.getContractorById(
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            currentUser
+                    ));
+
             assertEquals("You are not permitted to perform" +
                     " modifications in this warehouse", ex.getMessage()
             );
@@ -102,17 +172,17 @@ public class WarehouseContractorServiceTests {
         void verifyIfNewContractorIsCorrectlyAddedToTheWarehouse() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(true);
 
-            when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), testUser))
+            when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), currentUser))
                     .thenReturn(testWarehouse);
             when(contractorRepository.findByWarehouseIdAndNip(testWarehouse.getId(), "0123456789"))
                     .thenReturn(Optional.empty());
 
             contractorService.addContractorToWarehouse(
-                    testWarehouse.getId(), "TEST-CODE", "TEST", "0123456789", "ADDITIONAL INFO", testUser
+                    testWarehouse.getId(), "TEST-CODE", "TEST", "0123456789", "ADDITIONAL INFO", currentUser
             );
 
             verify(
@@ -125,7 +195,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfResourceAccessExceptionIsThrownWhenNoWriteAccess() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(false);
 
@@ -136,7 +206,7 @@ public class WarehouseContractorServiceTests {
                             "NAME",
                             "123",
                             "INFO",
-                            testUser
+                            currentUser
                     ));
 
             assertEquals("You are not permitted to perform" +
@@ -145,9 +215,9 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfBusinessValidationExceptionIsThrownWhenNipAlreadyExists() {
-            when(warehouseService.hasAccess(testWarehouse.getId(), testUser.getId(), true))
+            when(warehouseService.hasAccess(testWarehouse.getId(), currentUser.getId(), true))
                     .thenReturn(true);
-            when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), testUser))
+            when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), currentUser))
                     .thenReturn(testWarehouse);
             when(contractorRepository.findByWarehouseIdAndNip(testWarehouse.getId(), "0123456789"))
                     .thenReturn(Optional.of(testContractor));
@@ -159,7 +229,7 @@ public class WarehouseContractorServiceTests {
                             "TEST",
                             "0123456789",
                             "ADDITIONAL INFO",
-                            testUser
+                            currentUser
                     )
             );
 
@@ -173,7 +243,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfContractorIsCorrectlyRemoved() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(true);
 
@@ -185,7 +255,7 @@ public class WarehouseContractorServiceTests {
             contractorService.removeContractorFromWarehouse(
                     testWarehouse.getId(),
                     testContractor.getId(),
-                    testUser
+                    currentUser
             );
 
             verify(
@@ -198,7 +268,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfResourceAccessExceptionIsThrownWhenNoWriteAccess() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(false);
 
@@ -206,7 +276,7 @@ public class WarehouseContractorServiceTests {
                     contractorService.removeContractorFromWarehouse(
                             testWarehouse.getId(),
                             testContractor.getId(),
-                            testUser
+                            currentUser
                     )
             );
 
@@ -215,13 +285,13 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceNotFoundExceptionIsThrownWhenContractorDoesNotExist() {
-            when(warehouseService.hasAccess(testWarehouse.getId(), testUser.getId(), true))
+            when(warehouseService.hasAccess(testWarehouse.getId(), currentUser.getId(), true))
                     .thenReturn(true);
             when(contractorRepository.findByIdAndWarehouseId(testContractor.getId(), testWarehouse.getId()))
                     .thenReturn(Optional.empty());
 
             assertThrows(ResourceNotFoundException.class, () ->
-                    contractorService.removeContractorFromWarehouse(testWarehouse.getId(), testContractor.getId(), testUser)
+                    contractorService.removeContractorFromWarehouse(testWarehouse.getId(), testContractor.getId(), currentUser)
             );
 
             verify(contractorRepository, never()).delete(any());
@@ -234,7 +304,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfContractorIsSuccessfullyUpdatedWithoutChangingNip() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(true);
 
@@ -244,7 +314,7 @@ public class WarehouseContractorServiceTests {
 
             when(warehouseService.getWarehouseByIdAndUser(
                     testWarehouse.getId(),
-                    testUser
+                    currentUser
             )).thenReturn(testWarehouse);
 
             contractorService.updateContractor(
@@ -254,7 +324,7 @@ public class WarehouseContractorServiceTests {
                     "NEW-NAME",
                     testContractor.getNip(),
                     "NEW-INFO",
-                    testUser
+                    currentUser
             );
 
             assertEquals("NEW-CODE", testContractor.getCode());
@@ -270,7 +340,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfContractorIsSuccessfullyUpdatedWithNewUniqueNip() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(true);
 
@@ -280,7 +350,7 @@ public class WarehouseContractorServiceTests {
 
             when(warehouseService.getWarehouseByIdAndUser(
                     testWarehouse.getId(),
-                    testUser
+                    currentUser
             )).thenReturn(testWarehouse);
 
             String newNip = "9876543210";
@@ -292,7 +362,7 @@ public class WarehouseContractorServiceTests {
                     "NEW-NAME",
                     newNip,
                     "NEW-INFO",
-                    testUser
+                    currentUser
             );
 
             assertEquals("NEW-CODE", testContractor.getCode());
@@ -309,13 +379,13 @@ public class WarehouseContractorServiceTests {
         void verifyIfBusinessValidationExceptionIsThrownWhenNewNipAlreadyExists() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(true);
 
             when(contractorRepository.findByIdAndWarehouseId(testContractor.getId(), testWarehouse.getId()))
                     .thenReturn(Optional.of(testContractor));
-            when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), testUser))
+            when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), currentUser))
                     .thenReturn(testWarehouse);
 
             String newNip = "9876543210";
@@ -333,7 +403,7 @@ public class WarehouseContractorServiceTests {
                             "NAME",
                             newNip,
                             "INFO",
-                            testUser
+                            currentUser
                     )
             );
 
@@ -349,7 +419,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfResourceAccessExceptionIsThrownWhenNoWriteAccess() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(false);
 
@@ -361,7 +431,7 @@ public class WarehouseContractorServiceTests {
                             "NEW-NAME",
                             "NEW-NIP",
                             "NEW-INFO",
-                            testUser
+                            currentUser
                     )
             );
 
@@ -374,7 +444,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfResourceNotFoundExceptionIsThrownWhenContractorDoesNotExist() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(true);
 
@@ -384,15 +454,15 @@ public class WarehouseContractorServiceTests {
             )).thenReturn(Optional.empty());
 
             ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () ->
-                            contractorService.updateContractor(
-                                    testWarehouse.getId(),
-                                    testContractor.getId(),
-                                    "NEW-CODE",
-                                    "NEW-NAME",
-                                    "NEW-NIP",
-                                    "NEW-INFO",
-                                    testUser
-                            )
+                    contractorService.updateContractor(
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            "NEW-CODE",
+                            "NEW-NAME",
+                            "NEW-NIP",
+                            "NEW-INFO",
+                            currentUser
+                    )
             );
 
             assertEquals(
@@ -410,12 +480,12 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfContractorIsCorrectlyRemoved() {
-            when(warehouseService.hasAccess(testWarehouse.getId(), testUser.getId(), true))
+            when(warehouseService.hasAccess(testWarehouse.getId(), currentUser.getId(), true))
                     .thenReturn(true);
             when(contractorRepository.findByIdAndWarehouseId(testContractor.getId(), testWarehouse.getId()))
                     .thenReturn(Optional.of(testContractor));
 
-            contractorService.removeContractorFromWarehouse(testWarehouse.getId(), testContractor.getId(), testUser);
+            contractorService.removeContractorFromWarehouse(testWarehouse.getId(), testContractor.getId(), currentUser);
 
             verify(
                     contractorRepository,
@@ -427,7 +497,7 @@ public class WarehouseContractorServiceTests {
         void shouldThrowResourceAccessExceptionWhenNoWriteAccess() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(false);
 
@@ -435,13 +505,13 @@ public class WarehouseContractorServiceTests {
                     contractorService.removeContractorFromWarehouse(
                             testWarehouse.getId(),
                             testContractor.getId(),
-                            testUser
+                            currentUser
                     )
             );
 
             assertEquals(
                     "You are not permitted to perform" +
-                    " modifications in this warehouse",
+                            " modifications in this warehouse",
                     ex.getMessage()
             );
             verify(contractorRepository, never()).delete(any());
@@ -451,7 +521,7 @@ public class WarehouseContractorServiceTests {
         void verifyIfResourceNotFoundExceptionIsThrownWhenContractorDoesNotExist() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
-                    testUser.getId(),
+                    currentUser.getId(),
                     true
             )).thenReturn(true);
 
@@ -464,7 +534,7 @@ public class WarehouseContractorServiceTests {
                     contractorService.removeContractorFromWarehouse(
                             testWarehouse.getId(),
                             testContractor.getId(),
-                            testUser
+                            currentUser
                     ));
 
             verify(contractorRepository, never()).delete(any());

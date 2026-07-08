@@ -12,9 +12,13 @@ import java.util.Optional;
 
 @Repository
 public interface WarehouseItemRepository extends JpaRepository<@NonNull WarehouseItem, @NonNull Long> {
+    Optional<WarehouseItem> findByIdAndWarehouseZoneWarehouseId(Long id, Long warehouseId);
+
     Optional<WarehouseItem> findByWarehouseZoneWarehouseIdAndSku(
             Long warehouseId, String sku
     );
+
+    List<WarehouseItem> findAllByWarehouseZoneWarehouseId(Long warehouseId);
 
     List<WarehouseItem> findAllByWarehouseZoneId(Long zoneId);
 
