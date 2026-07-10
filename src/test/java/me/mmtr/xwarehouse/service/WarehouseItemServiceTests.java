@@ -66,14 +66,17 @@ public class WarehouseItemServiceTests {
     @Nested
     class getItemByIdAndWarehouseIdTests {
 
-        @Test
-        void verifyIfItemIsCorrectlyReturned() {
+        @BeforeEach
+        public void setUp() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
                     currentUser.getId(),
-                    false)
-            ).thenReturn(true);
+                    false
+            )).thenReturn(true);
+        }
 
+        @Test
+        void verifyIfItemIsCorrectlyReturned() {
             when(itemRepository.findByIdAndWarehouseZoneWarehouseId(
                     testItem.getId(), testWarehouse.getId()
             )).thenReturn(Optional.of(testItem));
@@ -103,19 +106,13 @@ public class WarehouseItemServiceTests {
             );
 
             assertEquals("You are not permitted to perform" +
-                    " modifications in this warehouse",
+                            " modifications in this warehouse",
                     ex.getMessage()
             );
         }
 
         @Test
         void verifyIfExceptionIsThrownWhenNoItemFound() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false)
-            ).thenReturn(true);
-
             when(itemRepository.findByIdAndWarehouseZoneWarehouseId(
                     testItem.getId(), testWarehouse.getId()
             )).thenReturn(Optional.empty());
@@ -123,9 +120,9 @@ public class WarehouseItemServiceTests {
             ResourceNotFoundException ex = assertThrows(
                     ResourceNotFoundException.class,
                     () -> itemService.getItemByIdAndWarehouseId(
-                    testItem.getId(),
-                    testWarehouse.getId(),
-                    currentUser)
+                            testItem.getId(),
+                            testWarehouse.getId(),
+                            currentUser)
             );
 
             assertEquals(
@@ -137,14 +134,18 @@ public class WarehouseItemServiceTests {
 
     @Nested
     class GetItemsByWarehouseIdAndUserTests {
-        @Test
-        void verifyIfItemsAreCorrectlyReturnedWithValidKeywordParameter() {
+
+        @BeforeEach
+        public void setUp() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
                     currentUser.getId(),
-                    false)
-            ).thenReturn(true);
+                    false
+            )).thenReturn(true);
+        }
 
+        @Test
+        void verifyIfItemsAreCorrectlyReturnedWithValidKeywordParameter() {
             when(itemRepository.findAllByZoneIdAndNameOrSkuContaining(
                     testZone.getId(), "Item"
             )).thenReturn(List.of(testItem));
@@ -167,12 +168,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithInvalidKeywordParameter() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false)
-            ).thenReturn(true);
-
             when(itemRepository.findAllByWarehouseZoneId(
                     testZone.getId()
             )).thenReturn(List.of(testItem));
@@ -195,12 +190,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithNullKeywordParameter() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false)
-            ).thenReturn(true);
-
             when(itemRepository.findAllByWarehouseZoneId(
                     testZone.getId()
             )).thenReturn(List.of(testItem));
@@ -224,13 +213,17 @@ public class WarehouseItemServiceTests {
 
     @Nested
     class AddItemToZoneTests {
-        @Test
-        void verifyIfNewItemIsSavedCorrectly() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
+        @BeforeEach
+        public void setUp() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
                     currentUser.getId(),
                     true
             )).thenReturn(true);
+        }
 
+        @Test
+        void verifyIfNewItemIsSavedCorrectly() {
             when(zoneService.getZoneByIdAndUser(
                     testWarehouse.getId(), testZone.getId(), currentUser))
                     .thenReturn(testZone);
@@ -255,10 +248,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfItemQuantityIsIncreasedWhenSkuAlreadyExists() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(), currentUser.getId(), true))
-                    .thenReturn(true);
-
             when(zoneService.getZoneByIdAndUser(
                     testWarehouse.getId(), testZone.getId(), currentUser))
                     .thenReturn(testZone);
@@ -317,16 +306,16 @@ public class WarehouseItemServiceTests {
         public void setup() {
             otherTestZone = new WarehouseZone("Zone B", testWarehouse);
             otherTestZone.setId(5L);
+
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    true
+            )).thenReturn(true);
         }
 
         @Test
         void verifyIfItemIsUpdatedCorrectly() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
             when(itemRepository.findById(testItem.getId()))
                     .thenReturn(Optional.of(testItem));
 
@@ -384,12 +373,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenItemDoesNotExist() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
             when(itemRepository.findById(testItem.getId()))
                     .thenReturn(Optional.empty());
 
@@ -413,12 +396,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenItemBelongsToTheOtherWarehouse() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
             Warehouse otherWarehouse = new Warehouse(
                     "Other Warehouse", currentUser
             );
@@ -450,12 +427,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenItemWithGivenSkuAlreadyExists() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
             when(itemRepository.findById(testItem.getId()))
                     .thenReturn(Optional.of(testItem));
 
@@ -499,18 +470,21 @@ public class WarehouseItemServiceTests {
 
     @Nested
     class RemoveItemFromZoneTests {
+        @BeforeEach
+        public void setUp() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    true
+            )).thenReturn(true);
+        }
+
         @Test
         void verifyIfItemIsDeletedCorrectly() {
             when(warehouseService.getWarehouseByIdAndUser(
                     testWarehouse.getId(),
                     currentUser
             )).thenReturn(testWarehouse);
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
 
             when(itemRepository.findById(testItem.getId()))
                     .thenReturn(Optional.of(testItem));
@@ -548,12 +522,6 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfExceptionIsThrowsWhenItemDoesNotExist() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
             when(itemRepository.findById(testItem.getId()))
                     .thenReturn(Optional.empty());
 
@@ -588,12 +556,6 @@ public class WarehouseItemServiceTests {
                     testWarehouse.getId(),
                     currentUser
             )).thenReturn(testWarehouse);
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
 
             when(itemRepository.findById(testItem.getId()))
                     .thenReturn(Optional.of(testItem));

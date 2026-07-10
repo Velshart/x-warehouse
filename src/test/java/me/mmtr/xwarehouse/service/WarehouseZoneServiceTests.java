@@ -53,6 +53,15 @@ public class WarehouseZoneServiceTests {
 
     @Nested
     class GetZoneByIdAndUserTests {
+        @BeforeEach
+        public void setUp() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false
+            )).thenReturn(true);
+        }
+
         @Test
         void verifyIfZoneIsReturnedCorrectly() {
             when(warehouseService
@@ -89,7 +98,11 @@ public class WarehouseZoneServiceTests {
                             )
                     );
 
-            assertEquals("Zone with id " + testZone.getId() + " does not exist", ex.getMessage());
+            assertEquals(
+                    "Zone with id " + testZone.getId() +
+                    " does not exist",
+                    ex.getMessage()
+            );
         }
 
         @Test
@@ -117,6 +130,29 @@ public class WarehouseZoneServiceTests {
                     ex.getMessage()
             );
         }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenNoReadAccess() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false
+            )).thenReturn(false);
+
+            ResourceAccessException ex =
+                    assertThrows(ResourceAccessException.class, () ->
+                            zoneService.getZoneByIdAndUser(
+                                    testWarehouse.getId(),
+                                    testZone.getId(),
+                                    currentUser
+                            ));
+
+            assertEquals(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse",
+                    ex.getMessage()
+            );
+        }
     }
 
     @Nested
@@ -127,6 +163,12 @@ public class WarehouseZoneServiceTests {
         public void setup() {
             secondTestZone = new WarehouseZone("Zone B", testWarehouse);
             secondTestZone.setId(4L);
+
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false
+            )).thenReturn(true);
         }
 
         @Test
@@ -142,9 +184,6 @@ public class WarehouseZoneServiceTests {
             assertEquals(2, zoneList.size());
             assertEquals(testZone.getId(), zoneList.getFirst().getId());
             assertEquals(secondTestZone.getId(), zoneList.get(1).getId());
-
-            verify(warehouseService, times(1))
-                    .getWarehouseByIdAndUser(testWarehouse.getId(), currentUser);
 
             verify(zoneRepository, times(1))
                     .findAllByWarehouseIdAndNameContaining(
@@ -165,12 +204,8 @@ public class WarehouseZoneServiceTests {
             assertEquals(testZone.getId(), zoneList.getFirst().getId());
             assertEquals(secondTestZone.getId(), zoneList.get(1).getId());
 
-            verify(warehouseService, times(1))
-                    .getWarehouseByIdAndUser(testWarehouse.getId(), currentUser);
-
             verify(zoneRepository, times(1))
-                    .findAllByWarehouseId(testWarehouse.getId()
-            );
+                    .findAllByWarehouseId(testWarehouse.getId());
         }
 
 
@@ -187,12 +222,30 @@ public class WarehouseZoneServiceTests {
             assertEquals(testZone.getId(), zoneList.getFirst().getId());
             assertEquals(secondTestZone.getId(), zoneList.get(1).getId());
 
-            verify(warehouseService, times(1))
-                    .getWarehouseByIdAndUser(testWarehouse.getId(), currentUser);
-
             verify(zoneRepository, times(1))
-                    .findAllByWarehouseId(testWarehouse.getId()
-            );
+                    .findAllByWarehouseId(testWarehouse.getId());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenNoReadAccess() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    false
+            )).thenReturn(false);
+
+            ResourceAccessException ex =
+                    assertThrows(ResourceAccessException.class, () ->
+                            zoneService.getZonesByWarehouseId(
+                                    testWarehouse.getId(),
+                                    null,
+                                    currentUser
+                            ));
+
+            assertEquals(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse",
+                    ex.getMessage());
         }
     }
 

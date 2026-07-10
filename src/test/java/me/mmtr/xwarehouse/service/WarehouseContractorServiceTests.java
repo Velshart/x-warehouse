@@ -97,14 +97,17 @@ public class WarehouseContractorServiceTests {
 
     @Nested
     class GetContractorByIdTests {
-        @Test
-        void verifyIfContractorIsCorrectlyReturned() {
+        @BeforeEach
+        public void setUp() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
                     currentUser.getId(),
                     false
             )).thenReturn(true);
+        }
 
+        @Test
+        void verifyIfContractorIsCorrectlyReturned() {
             when(contractorRepository.findByIdAndWarehouseId(
                     testContractor.getId(),
                     testWarehouse.getId())
@@ -120,12 +123,6 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenContractorNotFound() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-
             when(contractorRepository.findByIdAndWarehouseId(
                     testContractor.getId(),
                     testWarehouse.getId())
@@ -168,14 +165,17 @@ public class WarehouseContractorServiceTests {
 
     @Nested
     class AddContractorToWarehouseTests {
-        @Test
-        void verifyIfNewContractorIsCorrectlyAddedToTheWarehouse() {
+        @BeforeEach
+        public void setUp() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
                     currentUser.getId(),
                     true
             )).thenReturn(true);
+        }
 
+        @Test
+        void verifyIfNewContractorIsCorrectlyAddedToTheWarehouse() {
             when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), currentUser))
                     .thenReturn(testWarehouse);
             when(contractorRepository.findByWarehouseIdAndNip(testWarehouse.getId(), "0123456789"))
@@ -215,8 +215,6 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfBusinessValidationExceptionIsThrownWhenNipAlreadyExists() {
-            when(warehouseService.hasAccess(testWarehouse.getId(), currentUser.getId(), true))
-                    .thenReturn(true);
             when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), currentUser))
                     .thenReturn(testWarehouse);
             when(contractorRepository.findByWarehouseIdAndNip(testWarehouse.getId(), "0123456789"))
@@ -239,14 +237,17 @@ public class WarehouseContractorServiceTests {
 
     @Nested
     class RemoveContractorFromWarehouseTests {
-        @Test
-        void verifyIfContractorIsCorrectlyRemoved() {
+        @BeforeEach
+        public void setUp() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
                     currentUser.getId(),
                     true
             )).thenReturn(true);
+        }
 
+        @Test
+        void verifyIfContractorIsCorrectlyRemoved() {
             when(contractorRepository.findByIdAndWarehouseId(
                     testContractor.getId(),
                     testWarehouse.getId()
@@ -285,8 +286,6 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceNotFoundExceptionIsThrownWhenContractorDoesNotExist() {
-            when(warehouseService.hasAccess(testWarehouse.getId(), currentUser.getId(), true))
-                    .thenReturn(true);
             when(contractorRepository.findByIdAndWarehouseId(testContractor.getId(), testWarehouse.getId()))
                     .thenReturn(Optional.empty());
 
@@ -300,14 +299,17 @@ public class WarehouseContractorServiceTests {
 
     @Nested
     class UpdateContractorTests {
-        @Test
-        void verifyIfContractorIsSuccessfullyUpdatedWithoutChangingNip() {
+        @BeforeEach
+        public void setUp() {
             when(warehouseService.hasAccess(
                     testWarehouse.getId(),
                     currentUser.getId(),
                     true
             )).thenReturn(true);
+        }
 
+        @Test
+        void verifyIfContractorIsSuccessfullyUpdatedWithoutChangingNip() {
             when(contractorRepository.findByIdAndWarehouseId(
                     testContractor.getId(), testWarehouse.getId()
             )).thenReturn(Optional.of(testContractor));
@@ -338,12 +340,6 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfContractorIsSuccessfullyUpdatedWithNewUniqueNip() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(contractorRepository.findByIdAndWarehouseId(
                     testContractor.getId(), testWarehouse.getId()
             )).thenReturn(Optional.of(testContractor));
@@ -377,12 +373,6 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfBusinessValidationExceptionIsThrownWhenNewNipAlreadyExists() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(contractorRepository.findByIdAndWarehouseId(testContractor.getId(), testWarehouse.getId()))
                     .thenReturn(Optional.of(testContractor));
             when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), currentUser))
@@ -442,12 +432,6 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceNotFoundExceptionIsThrownWhenContractorDoesNotExist() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(contractorRepository.findByIdAndWarehouseId(
                     testContractor.getId(),
                     testWarehouse.getId()
@@ -478,10 +462,17 @@ public class WarehouseContractorServiceTests {
     @Nested
     class RemoveContractorFromWarehouse {
 
+        @BeforeEach
+        public void setUp() {
+            when(warehouseService.hasAccess(
+                    testWarehouse.getId(),
+                    currentUser.getId(),
+                    true
+            )).thenReturn(true);
+        }
+
         @Test
         void verifyIfContractorIsCorrectlyRemoved() {
-            when(warehouseService.hasAccess(testWarehouse.getId(), currentUser.getId(), true))
-                    .thenReturn(true);
             when(contractorRepository.findByIdAndWarehouseId(testContractor.getId(), testWarehouse.getId()))
                     .thenReturn(Optional.of(testContractor));
 
@@ -519,12 +510,6 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceNotFoundExceptionIsThrownWhenContractorDoesNotExist() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(contractorRepository.findByIdAndWarehouseId(
                     testContractor.getId(),
                     testWarehouse.getId()
