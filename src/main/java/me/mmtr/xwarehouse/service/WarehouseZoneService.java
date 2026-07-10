@@ -31,6 +31,8 @@ public class WarehouseZoneService {
             Long zoneId,
             User currentUser
     ) {
+        validateReadAccess(warehouseId, currentUser);
+
         Warehouse warehouse
                 = warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
 
@@ -53,8 +55,9 @@ public class WarehouseZoneService {
             String keyword,
             User currentUser
     ) {
-        // checks whether the provided user has the required permissions
-        warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
+        validateReadAccess(warehouseId, currentUser);
+//        // checks whether the provided user has the required permissions
+//        warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
 
         if (keyword == null || keyword.trim().isEmpty()) {
             return zoneRepository.findAllByWarehouseId(warehouseId);
@@ -124,6 +127,15 @@ public class WarehouseZoneService {
         }
 
         zoneRepository.delete(warehouseZone);
+    }
+
+    private void validateReadAccess(Long warehouseId, User currentUser) {
+        if (!warehouseService.hasAccess(warehouseId, currentUser.getId(), false)) {
+            throw new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            );
+        }
     }
 
     private void validateWriteAccess(Long warehouseId, User currentUser) {

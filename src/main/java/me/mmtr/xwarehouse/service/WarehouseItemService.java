@@ -65,8 +65,6 @@ public class WarehouseItemService {
             String keyword,
             User currentUser
     ) {
-        // checks whether the provided user has the required permissions
-        //warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
         validateReadAccess(warehouseId, currentUser);
 
         if (keyword == null || keyword.trim().isEmpty()) {
