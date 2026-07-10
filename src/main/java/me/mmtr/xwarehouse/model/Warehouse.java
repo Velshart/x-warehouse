@@ -14,8 +14,12 @@ public class Warehouse {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    @Size(min = 1, max = 100, message = "Warehouse name cannot exceed 100 characters")
+    @Column(nullable = false, length = 30)
+    @Size(
+            min = 1,
+            max = 30,
+            message = "Warehouse name must be between 1 and 30 characters long"
+    )
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -144,25 +144,25 @@
             <form th:action="@{/warehouse/{wId}/contractors/add-contractor(wId=${warehouse.id})}" method="post" class="space-y-4">
                 <div>
                     <label for="code" class="block text-xs font-medium text-slate-400 mb-1">Contractor Code</label>
-                    <input id="code" name="code" type="text" required
+                    <input id="code" name="code" type="text" minlength="1" maxlength="51" required
                            class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-sm uppercase placeholder-slate-600 focus:outline-none focus:border-amber-500 transition"
                            placeholder="e.g. SUP-LOGISTIC">
                 </div>
                 <div>
                     <label for="name" class="block text-xs font-medium text-slate-400 mb-1">Company Name</label>
-                    <input id="name" name="name" type="text" required
+                    <input id="name" name="name" type="text" minlength="1" maxlength="40" required
                            class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-600 focus:outline-none focus:border-amber-500 transition"
                            placeholder="e.g. Apex Supply Logistics Ltd.">
                 </div>
                 <div>
                     <label for="nip" class="block text-xs font-medium text-slate-400 mb-1">NIP (Tax ID Number)</label>
-                    <input id="nip" name="nip" type="text" required
+                    <input id="nip" name="nip" type="text" minlength="10" maxlength="15" required
                            class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-sm placeholder-slate-600 focus:outline-none focus:border-amber-500 transition"
                            placeholder="e.g. 1234567890">
                 </div>
                 <div>
                     <label for="additionalInfo" class="block text-xs font-medium text-slate-400 mb-1">Additional Information</label>
-                    <textarea id="additionalInfo" name="additionalInfo" rows="3"
+                    <textarea id="additionalInfo" name="additionalInfo" rows="3" maxlength="100"
                               class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-600 focus:outline-none focus:border-amber-500 transition"
                               placeholder="e.g. Main contact to warehouse logistics branch..."></textarea>
                 </div>
@@ -213,22 +213,22 @@
             <input type="hidden" id="editContractorId" name="contractorId">
             <div>
                 <label for="editCode" class="block text-xs font-medium text-slate-400 mb-1">Contractor Code</label>
-                <input id="editCode" name="code" type="text" required
+                <input id="editCode" name="code" type="text" minlength="1" maxlength="50" required
                        class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-sm uppercase focus:outline-none focus:border-amber-500 transition">
             </div>
             <div>
                 <label for="editName" class="block text-xs font-medium text-slate-400 mb-1">Company Name</label>
-                <input id="editName" name="name" type="text" required
+                <input id="editName" name="name" type="text" minlength="1" maxlength="40" required
                        class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-amber-500 transition">
             </div>
             <div>
                 <label for="editNip" class="block text-xs font-medium text-slate-400 mb-1">NIP (Tax ID)</label>
-                <input id="editNip" name="nip" type="text" required
+                <input id="editNip" name="nip" type="text" minlength="1" maxlength="15" required
                        class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-amber-500 transition">
             </div>
             <div>
                 <label for="editAdditionalInfo" class="block text-xs font-medium text-slate-400 mb-1">Additional Information</label>
-                <textarea id="editAdditionalInfo" name="additionalInfo" rows="3"
+                <textarea id="editAdditionalInfo" name="additionalInfo" maxlength="100" rows="3"
                           class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-amber-500 transition"></textarea>
             </div>
 

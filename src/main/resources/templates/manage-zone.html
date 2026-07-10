@@ -187,19 +187,19 @@
                   class="space-y-4">
                 <div>
                     <label for="itemName" class="block text-xs font-medium text-slate-400 mb-1">Item Name</label>
-                    <input id="itemName" name="name" type="text" required
+                    <input id="itemName" name="name" type="text" minlength="1" maxlength="100" required
                            class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm"
                            placeholder="e.g. Euro Pallet Type A">
                 </div>
                 <div>
                     <label for="itemSku" class="block text-xs font-medium text-slate-400 mb-1">SKU (Unique Code)</label>
-                    <input id="itemSku" name="sku" type="text" required
+                    <input id="itemSku" name="sku" type="text" minlength="1" maxlength="12" required
                            class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-sm uppercase"
                            placeholder="e.g. PAL-EUR-01">
                 </div>
                 <div>
                     <label for="itemQty" class="block text-xs font-medium text-slate-400 mb-1">Initial Quantity</label>
-                    <input id="itemQty" name="quantity" type="number" min="1" required
+                    <input id="itemQty" name="quantity" type="number" min="0" required
                            class="appearance-none block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm"
                            placeholder="50">
                 </div>

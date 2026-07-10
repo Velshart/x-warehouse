@@ -1,6 +1,7 @@
 package me.mmtr.xwarehouse.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,9 +21,19 @@ public class User implements UserDetails {
     private Long id;
 
     @Column(nullable = false, unique = true)
+    @Size(
+            min = 1,
+            max = 20,
+            message = "Username must be between 1 and 20 characters long"
+    )
     private String username;
 
     @Column(nullable = false)
+    @Size(
+            min = 1,
+            max = 100,
+            message = "Password must be between 1 and 100 characters long"
+    )
     private String password;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)

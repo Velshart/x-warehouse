@@ -1,5 +1,6 @@
 package me.mmtr.xwarehouse.controller;
 
+import jakarta.validation.Valid;
 import me.mmtr.xwarehouse.exception.BusinessValidationException;
 import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
@@ -55,10 +56,10 @@ public class WarehouseContractorController {
     public String addContractor(
             @PathVariable Long warehouseId,
             @AuthenticationPrincipal User currentUser,
-            @RequestParam String code,
-            @RequestParam String name,
-            @RequestParam String nip,
-            @RequestParam(required = false) String additionalInfo,
+            @Valid @RequestParam String code,
+            @Valid @RequestParam String name,
+            @Valid @RequestParam String nip,
+            @Valid @RequestParam(required = false) String additionalInfo,
             RedirectAttributes redirectAttributes
     ) {
         try {

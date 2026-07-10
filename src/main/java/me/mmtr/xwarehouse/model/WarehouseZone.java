@@ -13,12 +13,13 @@ public class WarehouseZone {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 40)
+    @Size(
+            min = 1,
+            max = 40,
+            message = "Warehouse zone name must be between 1 and 40 characters long"
+    )
     private String name;
-
-    @Column(length = 100)
-    @Size(max = 100, message = "Zone description cannot exceed 100 characters")
-    private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id", nullable = false)
@@ -53,14 +54,6 @@ public class WarehouseZone {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public Warehouse getWarehouse() {

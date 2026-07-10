@@ -2,6 +2,8 @@ package me.mmtr.xwarehouse.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "warehouse_contractors")
@@ -12,16 +14,30 @@ public class WarehouseContractor {
 
     @NotBlank(message = "Contractor code is required")
     @Column(nullable = false, length = 50)
+    @Size(
+            min = 1,
+            max = 50,
+            message = "Contractor code must be between 1 and 50 characters long"
+    )
     private String code;
 
     @NotBlank(message = "Contractor name is required")
-    @Column(nullable = false)
+    @Size(
+            min = 1,
+            max = 40,
+            message = "Contractor name must be between 1 and 40 characters long"
+    )
+    @Column(nullable = false, length = 40)
     private String name;
 
     @Column(nullable = false, length = 15)
+    @Pattern(
+            regexp = "^[a-zA-Z0-9]+$",
+            message = "Only letters and numbers are allowed in tax ID"
+    )
     private String nip;
 
-    @Column
+    @Column(length = 100)
     private String additionalInfo;
 
     @ManyToOne(fetch = FetchType.LAZY)

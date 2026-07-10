@@ -1,6 +1,7 @@
 package me.mmtr.xwarehouse.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "warehouse_items")
@@ -9,12 +10,16 @@ public class WarehouseItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false,  length = 40)
+    @Size(min = 1, max = 40)
     private String name;
 
     @Column(nullable = false)
+    @Size(min = 1, max = 12)
     private String sku;
 
+    @Size(max = 10_000_000)
+    @Column(nullable = false)
     private Long quantity;
 
     @ManyToOne(fetch = FetchType.LAZY)
