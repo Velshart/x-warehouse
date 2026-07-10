@@ -87,7 +87,7 @@ public class WarehouseOrderController {
                     orderedItemsForm.getItemRequests(),
                     currentUser
             );
-            redirectAttributes.addFlashAttribute("success", "Order created successfully.");
+            redirectAttributes.addFlashAttribute("success", "Order created successfully");
         } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -105,7 +105,7 @@ public class WarehouseOrderController {
     ) {
         try {
             warehouseOrderService.changeOrderStatus(warehouseId, orderId, newStatus, currentUser);
-            redirectAttributes.addFlashAttribute("success", "Order status changed successfully.");
+            redirectAttributes.addFlashAttribute("success", "Order status changed successfully");
         } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -122,7 +122,7 @@ public class WarehouseOrderController {
     ) {
         try {
             warehouseOrderService.deleteOrder(warehouseId, orderId, currentUser);
-            redirectAttributes.addFlashAttribute("success", "Order deleted successfully.");
+            redirectAttributes.addFlashAttribute("success", "Order deleted successfully");
         } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
