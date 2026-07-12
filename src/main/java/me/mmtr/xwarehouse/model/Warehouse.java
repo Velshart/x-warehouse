@@ -40,6 +40,13 @@ public class Warehouse {
     )
     private List<WarehouseZone> zones = new ArrayList<>();
 
+    @OneToMany(
+            mappedBy = "warehouse",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<WarehouseContractor> contractors = new ArrayList<>();
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -94,6 +101,14 @@ public class Warehouse {
 
     public void setZones(List<WarehouseZone> zones) {
         this.zones = zones;
+    }
+
+    public List<WarehouseContractor> getContractors() {
+        return contractors;
+    }
+
+    public void setContractors(List<WarehouseContractor> contractors) {
+        this.contractors = contractors;
     }
 
     public LocalDateTime getCreatedAt() {
