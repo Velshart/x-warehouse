@@ -1,6 +1,7 @@
 package me.mmtr.xwarehouse.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
 
 @Entity
 @Table(name = "warehouse_order_items")
@@ -18,6 +19,7 @@ public class WarehouseOrderItem {
     @JoinColumn(name = "item_id", nullable = false)
     private WarehouseItem warehouseItem;
 
+    @Max(10_000_000)
     @Column(nullable = false)
     private Long orderedQuantity;
 

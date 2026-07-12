@@ -1,6 +1,7 @@
 package me.mmtr.xwarehouse.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Size;
 
 @Entity
@@ -18,7 +19,7 @@ public class WarehouseItem {
     @Size(min = 1, max = 12)
     private String sku;
 
-    @Size(max = 10_000_000)
+    @Max(10_000_000)
     @Column(nullable = false)
     private Long quantity;
 
