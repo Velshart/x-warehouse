@@ -55,7 +55,6 @@ public class WarehouseZoneService {
             String keyword,
             User currentUser
     ) {
-        //validateReadAccess(warehouseId, currentUser);
         warehouseService.validateReadAccess(warehouseId, currentUser);
 
         if (keyword == null || keyword.trim().isEmpty()) {
@@ -72,7 +71,6 @@ public class WarehouseZoneService {
     public void addZone(Long warehouseId, String name, User currentUser) {
         Warehouse warehouse =
                 warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
-        //TODO: check ^
 
         warehouseService.validateWriteAccess(warehouseId, currentUser);
 
