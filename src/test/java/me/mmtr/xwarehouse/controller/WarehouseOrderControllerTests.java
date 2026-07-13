@@ -3,6 +3,7 @@ package me.mmtr.xwarehouse.controller;
 import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.model.*;
 import me.mmtr.xwarehouse.model.enums.WarehouseOrderStatus;
+import me.mmtr.xwarehouse.model.enums.WarehouseOrderType;
 import me.mmtr.xwarehouse.service.WarehouseContractorService;
 import me.mmtr.xwarehouse.service.WarehouseItemService;
 import me.mmtr.xwarehouse.service.WarehouseOrderService;
@@ -37,7 +38,8 @@ public class WarehouseOrderControllerTests {
 
     private User testUser;
     private Warehouse testWarehouse;
-    private WarehouseOrder testOrder;
+    private WarehouseOrder testInboundOrder;
+    private WarehouseOrder testOutboundOrder;
     private WarehouseContractor testContractor;
 
     private WarehouseItem testItem;
@@ -55,17 +57,24 @@ public class WarehouseOrderControllerTests {
         testWarehouse.setId(2L);
         testWarehouse.setOwner(testUser);
 
-        testOrder = new WarehouseOrder();
-        testOrder.setId(3L);
-        testOrder.setWarehouse(testWarehouse);
-        testOrder.setWarehouseOrderStatus(WarehouseOrderStatus.WAITING);
+        testInboundOrder = new WarehouseOrder();
+        testInboundOrder.setId(3L);
+        testInboundOrder.setWarehouse(testWarehouse);
+        testInboundOrder.setWarehouseOrderStatus(WarehouseOrderStatus.WAITING);
+        testInboundOrder.setWarehouseOrderType(WarehouseOrderType.INBOUND);
+
+        testOutboundOrder = new WarehouseOrder();
+        testOutboundOrder.setId(4L);
+        testOutboundOrder.setWarehouse(testWarehouse);
+        testOutboundOrder.setWarehouseOrderStatus(WarehouseOrderStatus.WAITING);
+        testOutboundOrder.setWarehouseOrderType(WarehouseOrderType.INBOUND);
 
         testContractor = new WarehouseContractor();
-        testContractor.setId(4L);
+        testContractor.setId(5L);
         testContractor.setWarehouse(testWarehouse);
 
         testItem = new WarehouseItem();
-        testItem.setId(5L);
+        testItem.setId(6L);
     }
 
     @Nested
@@ -75,8 +84,16 @@ public class WarehouseOrderControllerTests {
             when(warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
                     testWarehouse.getId(),
                     testContractor.getId(),
-                    testUser
-            )).thenReturn(List.of(testOrder));
+                    testUser,
+                    false
+            )).thenReturn(List.of(testInboundOrder));
+
+            when(warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
+                    testWarehouse.getId(),
+                    testContractor.getId(),
+                    testUser,
+                    true
+            )).thenReturn(List.of(testOutboundOrder));
 
             when(warehouseItemService.getItemsByWarehouseId(
                     testWarehouse.getId(),
@@ -90,18 +107,44 @@ public class WarehouseOrderControllerTests {
             mockMvc.perform(get(
                             "/warehouse/" +
                                     testWarehouse.getId() +
-                                    "/contractor-orders/" +
+                                    "/contractor-outbound-orders/" +
                                     testContractor.getId())
                             .with(user(testUser)))
                     .andExpect(status().isOk())
-                    .andExpect(view().name("manage-orders"))
+                    .andExpect(view().name("manage-outbound-orders"))
                     .andExpect(model().attribute(
                             "orderList",
-                            List.of(testOrder))
+                            List.of(testOutboundOrder))
                     )
                     .andExpect(model().attribute(
                             "itemList",
                             List.of(testItem))
+                    )
+                    .andExpect(model().attribute(
+                            "contractor",
+                            testContractor)
+                    )
+                    .andExpect(model().attribute(
+                            "warehouseId",
+                            testWarehouse.getId())
+                    )
+                    .andExpect(model().attribute("currentUser", testUser))
+                    .andExpect(model().attribute(
+                            "statuses",
+                            WarehouseOrderStatus.values()
+                    ));
+
+            mockMvc.perform(get(
+                            "/warehouse/" +
+                                    testWarehouse.getId() +
+                                    "/contractor-inbound-orders/" +
+                                    testContractor.getId())
+                            .with(user(testUser)))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("manage-inbound-orders"))
+                    .andExpect(model().attribute(
+                            "orderList",
+                            List.of(testInboundOrder))
                     )
                     .andExpect(model().attribute(
                             "contractor",
@@ -123,7 +166,18 @@ public class WarehouseOrderControllerTests {
             when(warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
                     testWarehouse.getId(),
                     testContractor.getId(),
-                    testUser
+                    testUser,
+                    false
+            )).thenThrow(new ResourceAccessException(
+                    "You are not permitted to perform " +
+                            "modifications in this warehouse"
+            ));
+
+            when(warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
+                    testWarehouse.getId(),
+                    testContractor.getId(),
+                    testUser,
+                    true
             )).thenThrow(new ResourceAccessException(
                     "You are not permitted to perform " +
                             "modifications in this warehouse"
@@ -132,7 +186,24 @@ public class WarehouseOrderControllerTests {
             mockMvc.perform(get(
                             "/warehouse/" +
                                     testWarehouse.getId() +
-                                    "/contractor-orders/" +
+                                    "/contractor-inbound-orders/" +
+                                    testContractor.getId())
+                            .with(user(testUser)))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl(
+                            "/warehouse/" +
+                                    testWarehouse.getId() +
+                                    "/contractors"
+                    ))
+                    .andExpect(flash().attribute("error",
+                            "You are not permitted to perform " +
+                                    "modifications in this warehouse"
+                    ));
+
+            mockMvc.perform(get(
+                            "/warehouse/" +
+                                    testWarehouse.getId() +
+                                    "/contractor-outbound-orders/" +
                                     testContractor.getId())
                             .with(user(testUser)))
                     .andExpect(status().is3xxRedirection())
@@ -160,11 +231,12 @@ public class WarehouseOrderControllerTests {
                                     "/create")
                             .with(user(testUser)).with(csrf())
                             .param("warehouseItemId", "5")
-                            .param("quantity", "10"))
+                            .param("quantity", "10")
+                            .param("outbound", "false"))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl(
                             "/warehouse/" + testWarehouse.getId() +
-                                    "/contractor-orders/" + testContractor.getId())
+                                    "/contractor-inbound-orders/" + testContractor.getId())
                     )
                     .andExpect(flash().attribute(
                             "success",
@@ -178,6 +250,40 @@ public class WarehouseOrderControllerTests {
                             eq(testWarehouse.getId()),
                             eq(testContractor.getId()),
                             anyList(),
+                            eq(false),
+                            eq(null),
+                            eq(testUser)
+                    );
+
+            mockMvc.perform(post(
+                            "/warehouse/" +
+                                    testWarehouse.getId() +
+                                    "/contractor-orders/" +
+                                    testContractor.getId() +
+                                    "/create")
+                            .with(user(testUser)).with(csrf())
+                            .param("warehouseItemId", "5")
+                            .param("quantity", "10")
+                            .param("outbound", "true"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl(
+                            "/warehouse/" + testWarehouse.getId() +
+                                    "/contractor-outbound-orders/" + testContractor.getId())
+                    )
+                    .andExpect(flash().attribute(
+                            "success",
+                            "Order created successfully"
+                    ));
+
+            verify(
+                    warehouseOrderService,
+                    times(1))
+                    .createOrder(
+                            eq(testWarehouse.getId()),
+                            eq(testContractor.getId()),
+                            anyList(),
+                            eq(true),
+                            eq(null),
                             eq(testUser)
                     );
         }
@@ -190,6 +296,19 @@ public class WarehouseOrderControllerTests {
                             testWarehouse.getId(),
                             testContractor.getId(),
                             List.of(),
+                            false,
+                            null,
+                            testUser
+                    );
+
+            doThrow(new ResourceAccessException("You are not permitted to perform " +
+                    "modifications in this warehouse"))
+                    .when(warehouseOrderService).createOrder(
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            List.of(),
+                            true,
+                            null,
                             testUser
                     );
 
@@ -199,12 +318,34 @@ public class WarehouseOrderControllerTests {
                             testContractor.getId() +
                             "/create")
                             .with(user(testUser))
-                            .with(csrf()))
+                            .with(csrf())
+                            .param("outbound", "false"))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl(
                             "/warehouse/" +
                                     testWarehouse.getId() +
-                                    "/contractor-orders/" +
+                                    "/contractor-inbound-orders/" +
+                                    testContractor.getId())
+                    )
+                    .andExpect(flash().attribute(
+                            "error",
+                            "You are not permitted to perform " +
+                                    "modifications in this warehouse"
+                    ));
+
+            mockMvc.perform(post("/warehouse/" +
+                            testWarehouse.getId() +
+                            "/contractor-orders/" +
+                            testContractor.getId() +
+                            "/create")
+                            .with(user(testUser))
+                            .with(csrf())
+                            .param("outbound", "true"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl(
+                            "/warehouse/" +
+                                    testWarehouse.getId() +
+                                    "/contractor-outbound-orders/" +
                                     testContractor.getId())
                     )
                     .andExpect(flash().attribute(
@@ -222,14 +363,15 @@ public class WarehouseOrderControllerTests {
             mockMvc.perform(post(
                             "/warehouse/" + testWarehouse.getId() +
                                     "/contractor-orders/" + testContractor.getId() +
-                                    "/order/" + testOrder.getId() + "/change-status")
+                                    "/order/" + testInboundOrder.getId() + "/change-status")
                             .with(user(testUser))
                             .with(csrf())
-                            .param("newStatus", "IN_PROGRESS"))
+                            .param("newStatus", "IN_PROGRESS")
+                            .param("outbound", "false"))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl(
                             "/warehouse/" + testWarehouse.getId() +
-                                    "/contractor-orders/" +
+                                    "/contractor-inbound-orders/" +
                                     testContractor.getId())
                     )
                     .andExpect(flash().attribute(
@@ -241,10 +383,39 @@ public class WarehouseOrderControllerTests {
             verify(warehouseOrderService, times(1))
                     .changeOrderStatus(
                             testWarehouse.getId(),
-                            testOrder.getId(),
+                            testInboundOrder.getId(),
                             WarehouseOrderStatus.IN_PROGRESS,
                             testUser
                     );
+
+            mockMvc.perform(post(
+                            "/warehouse/" + testWarehouse.getId() +
+                                    "/contractor-orders/" + testContractor.getId() +
+                                    "/order/" + testOutboundOrder.getId() + "/change-status")
+                            .with(user(testUser))
+                            .with(csrf())
+                            .param("newStatus", "IN_PROGRESS")
+                            .param("outbound", "true"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl(
+                            "/warehouse/" + testWarehouse.getId() +
+                                    "/contractor-outbound-orders/" +
+                                    testContractor.getId())
+                    )
+                    .andExpect(flash().attribute(
+                            "success",
+                            "Order status changed successfully"
+
+                    ));
+
+            verify(warehouseOrderService, times(1))
+                    .changeOrderStatus(
+                            testWarehouse.getId(),
+                            testOutboundOrder.getId(),
+                            WarehouseOrderStatus.IN_PROGRESS,
+                            testUser
+                    );
+
         }
 
         @Test
@@ -254,21 +425,51 @@ public class WarehouseOrderControllerTests {
                             "modifications in this warehouse"
             )).when(warehouseOrderService).changeOrderStatus(
                     testWarehouse.getId(),
-                    testOrder.getId(),
+                    testInboundOrder.getId(),
+                    WarehouseOrderStatus.IN_PROGRESS,
+                    testUser
+            );
+
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform " +
+                            "modifications in this warehouse"
+            )).when(warehouseOrderService).changeOrderStatus(
+                    testWarehouse.getId(),
+                    testOutboundOrder.getId(),
                     WarehouseOrderStatus.IN_PROGRESS,
                     testUser
             );
 
             mockMvc.perform(post("/warehouse/" + testWarehouse.getId() +
                             "/contractor-orders/" + testContractor.getId() +
-                            "/order/" + testOrder.getId() + "/change-status")
+                            "/order/" + testInboundOrder.getId() + "/change-status")
                             .with(user(testUser))
                             .with(csrf())
-                            .param("newStatus", "IN_PROGRESS"))
+                            .param("newStatus", "IN_PROGRESS")
+                            .param("outbound", "false"))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl(
                             "/warehouse/" + testWarehouse.getId() +
-                                    "/contractor-orders/" +
+                                    "/contractor-inbound-orders/" +
+                                    testContractor.getId())
+                    )
+                    .andExpect(flash().attribute(
+                            "error",
+                            "You are not permitted to perform " +
+                                    "modifications in this warehouse"
+                    ));
+
+            mockMvc.perform(post("/warehouse/" + testWarehouse.getId() +
+                            "/contractor-orders/" + testContractor.getId() +
+                            "/order/" + testOutboundOrder.getId() + "/change-status")
+                            .with(user(testUser))
+                            .with(csrf())
+                            .param("newStatus", "IN_PROGRESS")
+                            .param("outbound", "true"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl(
+                            "/warehouse/" + testWarehouse.getId() +
+                                    "/contractor-outbound-orders/" +
                                     testContractor.getId())
                     )
                     .andExpect(flash().attribute(
@@ -285,12 +486,13 @@ public class WarehouseOrderControllerTests {
         void verifyIfOrderIsDeletedSuccessfully() throws Exception {
             mockMvc.perform(post("/warehouse/" +
                             testWarehouse.getId() + "/contractor-orders/" +
-                            testContractor.getId() + "/order/" + testOrder.getId() +
-                            "/delete").with(user(testUser)).with(csrf()))
+                            testContractor.getId() + "/order/" + testInboundOrder.getId() +
+                            "/delete").with(user(testUser)).with(csrf())
+                            .param("outbound", "false"))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl(
                             "/warehouse/" + testWarehouse.getId() +
-                                    "/contractor-orders/" + testContractor.getId())
+                                    "/contractor-inbound-orders/" + testContractor.getId())
                     )
                     .andExpect(flash().attribute(
                             "success",
@@ -300,9 +502,24 @@ public class WarehouseOrderControllerTests {
             verify(warehouseOrderService, times(1))
                     .deleteOrder(
                             testWarehouse.getId(),
-                            testOrder.getId(),
+                            testInboundOrder.getId(),
                             testUser
                     );
+
+            mockMvc.perform(post("/warehouse/" +
+                            testWarehouse.getId() + "/contractor-orders/" +
+                            testContractor.getId() + "/order/" + testOutboundOrder.getId() +
+                            "/delete").with(user(testUser)).with(csrf())
+                            .param("outbound", "true"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl(
+                            "/warehouse/" + testWarehouse.getId() +
+                                    "/contractor-outbound-orders/" + testContractor.getId())
+                    )
+                    .andExpect(flash().attribute(
+                            "success",
+                            "Order deleted successfully"
+                    ));
         }
 
         @Test
@@ -312,19 +529,46 @@ public class WarehouseOrderControllerTests {
                             "modifications in this warehouse"
             )).when(warehouseOrderService).deleteOrder(
                     testWarehouse.getId(),
-                    testOrder.getId(),
+                    testInboundOrder.getId(),
+                    testUser
+            );
+
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform " +
+                            "modifications in this warehouse"
+            )).when(warehouseOrderService).deleteOrder(
+                    testWarehouse.getId(),
+                    testOutboundOrder.getId(),
                     testUser
             );
 
             mockMvc.perform(post("/warehouse/" +
                             testWarehouse.getId() + "/contractor-orders/" +
                             testContractor.getId() + "/order/" +
-                            testOrder.getId() + "/delete")
-                            .with(user(testUser)).with(csrf()))
+                            testInboundOrder.getId() + "/delete")
+                            .with(user(testUser)).with(csrf())
+                            .param("outbound", "false"))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl(
                             "/warehouse/" + testWarehouse.getId() +
-                                    "/contractor-orders/" + testContractor.getId())
+                                    "/contractor-inbound-orders/" + testContractor.getId())
+                    )
+                    .andExpect(flash().attribute(
+                            "error",
+                            "You are not permitted to perform " +
+                                    "modifications in this warehouse"
+                    ));
+
+            mockMvc.perform(post("/warehouse/" +
+                            testWarehouse.getId() + "/contractor-orders/" +
+                            testContractor.getId() + "/order/" +
+                            testOutboundOrder.getId() + "/delete")
+                            .with(user(testUser)).with(csrf())
+                            .param("outbound", "true"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl(
+                            "/warehouse/" + testWarehouse.getId() +
+                                    "/contractor-outbound-orders/" + testContractor.getId())
                     )
                     .andExpect(flash().attribute(
                             "error",

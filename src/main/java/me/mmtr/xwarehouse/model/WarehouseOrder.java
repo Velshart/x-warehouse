@@ -1,7 +1,9 @@
 package me.mmtr.xwarehouse.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import me.mmtr.xwarehouse.model.enums.WarehouseOrderStatus;
+import me.mmtr.xwarehouse.model.enums.WarehouseOrderType;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,8 +35,16 @@ public class WarehouseOrder {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     WarehouseOrderStatus warehouseOrderStatus;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    WarehouseOrderType warehouseOrderType;
+
+    @Size(max = 10_000)
+    String additionalInfo;
 
     public WarehouseOrder() {}
 
@@ -102,5 +112,21 @@ public class WarehouseOrder {
 
     public void setWarehouseOrderStatus(WarehouseOrderStatus warehouseOrderStatus) {
         this.warehouseOrderStatus = warehouseOrderStatus;
+    }
+
+    public WarehouseOrderType getWarehouseOrderType() {
+        return warehouseOrderType;
+    }
+
+    public void setWarehouseOrderType(WarehouseOrderType warehouseOrderType) {
+        this.warehouseOrderType = warehouseOrderType;
+    }
+
+    public String getAdditionalInfo() {
+        return additionalInfo;
+    }
+
+    public void setAdditionalInfo(String additionalInfo) {
+        this.additionalInfo = additionalInfo;
     }
 }

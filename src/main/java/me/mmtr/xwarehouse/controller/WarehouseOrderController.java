@@ -35,8 +35,8 @@ public class WarehouseOrderController {
         this.warehouseContractorService = warehouseContractorService;
     }
 
-    @GetMapping("/{warehouseId}/contractor-orders/{contractorId}")
-    public String getContractorOrders(
+    @GetMapping("/{warehouseId}/contractor-outbound-orders/{contractorId}")
+    public String getContractorOutboundOrders(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long warehouseId,
             @PathVariable Long contractorId,
@@ -44,17 +44,20 @@ public class WarehouseOrderController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            List<WarehouseOrder> orders =
-                    warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
-                            warehouseId, contractorId, currentUser
-                    );
-
-            List<WarehouseItem> items =
-                    warehouseItemService.getItemsByWarehouseId(warehouseId, currentUser);
+            List<WarehouseOrder> orders = warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
+                    warehouseId,
+                    contractorId,
+                    currentUser,
+                    true
+            );
 
             WarehouseContractor contractor =
                     warehouseContractorService.getContractorById(warehouseId, contractorId, currentUser);
 
+            List<WarehouseItem> items =
+                    warehouseItemService.getItemsByWarehouseId(warehouseId, currentUser);
+
+            //model.addAttribute("outbound", true);
             model.addAttribute("orderList", orders);
             model.addAttribute("itemList", items);
             model.addAttribute("contractor", contractor);
@@ -65,7 +68,43 @@ public class WarehouseOrderController {
                     WarehouseOrderStatus.values()
             );
 
-            return "manage-orders";
+            return "manage-outbound-orders";
+        } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/warehouse/" + warehouseId + "/contractors";
+        }
+    }
+
+    @GetMapping("/{warehouseId}/contractor-inbound-orders/{contractorId}")
+    public String getContractorInboundOrders(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long warehouseId,
+            @PathVariable Long contractorId,
+            Model model,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            List<WarehouseOrder> orders = warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
+                    warehouseId,
+                    contractorId,
+                    currentUser,
+                    false
+            );
+
+            WarehouseContractor contractor =
+                    warehouseContractorService.getContractorById(warehouseId, contractorId, currentUser);
+
+            //model.addAttribute("outbound", false);
+            model.addAttribute("orderList", orders);
+            model.addAttribute("contractor", contractor);
+            model.addAttribute("warehouseId", warehouseId);
+            model.addAttribute("currentUser", currentUser);
+            model.addAttribute(
+                    "statuses",
+                    WarehouseOrderStatus.values()
+            );
+
+            return "manage-inbound-orders";
         } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/warehouse/" + warehouseId + "/contractors";
@@ -78,6 +117,8 @@ public class WarehouseOrderController {
             @PathVariable Long warehouseId,
             @PathVariable Long contractorId,
             @ModelAttribute OrderedItemsForm orderedItemsForm,
+            @RequestParam boolean outbound,
+            @RequestParam(required = false) String additionalInfo,
             RedirectAttributes redirectAttributes
     ) {
         try {
@@ -85,13 +126,17 @@ public class WarehouseOrderController {
                     warehouseId,
                     contractorId,
                     orderedItemsForm.getItemRequests(),
+                    outbound,
+                    additionalInfo,
                     currentUser
             );
             redirectAttributes.addFlashAttribute("success", "Order created successfully");
         } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/warehouse/" + warehouseId + "/contractor-orders/" + contractorId;
+
+        return outbound ? "redirect:/warehouse/" + warehouseId + "/contractor-outbound-orders/" + contractorId
+                : "redirect:/warehouse/" + warehouseId + "/contractor-inbound-orders/" + contractorId;
     }
 
     @PostMapping("/{warehouseId}/contractor-orders/{contractorId}/order/{orderId}/change-status")
@@ -101,6 +146,7 @@ public class WarehouseOrderController {
             @PathVariable Long contractorId,
             @PathVariable Long orderId,
             @RequestParam WarehouseOrderStatus newStatus,
+            @RequestParam boolean outbound,
             RedirectAttributes redirectAttributes
     ) {
         try {
@@ -109,8 +155,8 @@ public class WarehouseOrderController {
         } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/warehouse/" + warehouseId + "/contractor-orders/" + contractorId;
-    }
+        return outbound ? "redirect:/warehouse/" + warehouseId + "/contractor-outbound-orders/" + contractorId
+                : "redirect:/warehouse/" + warehouseId + "/contractor-inbound-orders/" + contractorId;    }
 
     @PostMapping("/{warehouseId}/contractor-orders/{contractorId}/order/{orderId}/delete")
     public String deleteOrder(
@@ -118,6 +164,7 @@ public class WarehouseOrderController {
             @PathVariable Long warehouseId,
             @PathVariable Long contractorId,
             @PathVariable Long orderId,
+            @RequestParam boolean outbound,
             RedirectAttributes redirectAttributes
     ) {
         try {
@@ -126,6 +173,6 @@ public class WarehouseOrderController {
         } catch (BusinessValidationException | ResourceAccessException | ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/warehouse/" + warehouseId + "/contractor-orders/" + contractorId;
-    }
+        return outbound ? "redirect:/warehouse/" + warehouseId + "/contractor-outbound-orders/" + contractorId
+                : "redirect:/warehouse/" + warehouseId + "/contractor-inbound-orders/" + contractorId;    }
 }

@@ -2,11 +2,11 @@ package me.mmtr.xwarehouse.service;
 
 import jakarta.transaction.Transactional;
 import me.mmtr.xwarehouse.exception.BusinessValidationException;
-import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.*;
 import me.mmtr.xwarehouse.model.dto.OrderItemRequest;
 import me.mmtr.xwarehouse.model.enums.WarehouseOrderStatus;
+import me.mmtr.xwarehouse.model.enums.WarehouseOrderType;
 import me.mmtr.xwarehouse.repository.WarehouseOrderRepository;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +37,7 @@ public class WarehouseOrderService {
             Long warehouseId,
             User currentUser
     ) {
-        validateReadAccess(warehouseId, currentUser);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
 
         Optional<WarehouseOrder> warehouseOrder =
                 warehouseOrderRepository.findByIdAndWarehouseId(
@@ -55,10 +55,14 @@ public class WarehouseOrderService {
     public List<WarehouseOrder> getOrdersByWarehouseIdAndContractorId(
             Long warehouseId,
             Long contractorId,
-            User currentUser
+            User currentUser,
+            boolean outbound
     ) {
-        validateReadAccess(warehouseId, currentUser);
-        return warehouseOrderRepository.findAllByWarehouseIdAndWarehouseContractorId(warehouseId, contractorId);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
+        return outbound ?
+                warehouseOrderRepository.findAllByWarehouseIdAndWarehouseContractorIdAndWarehouseOrderType(warehouseId, contractorId, WarehouseOrderType.OUTBOUND)
+                :
+                warehouseOrderRepository.findAllByWarehouseIdAndWarehouseContractorIdAndWarehouseOrderType(warehouseId, contractorId, WarehouseOrderType.INBOUND);
     }
 
     @Transactional
@@ -66,9 +70,11 @@ public class WarehouseOrderService {
             Long warehouseId,
             Long warehouseContractorId,
             List<OrderItemRequest> orderItemRequests,
+            boolean outbound,
+            String additionalInfo,
             User currentUser
     ) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         Warehouse warehouse =
                 warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
@@ -77,47 +83,57 @@ public class WarehouseOrderService {
                 warehouseId, warehouseContractorId, currentUser
         );
 
-        if (orderItemRequests == null || orderItemRequests.isEmpty()) {
-            throw new BusinessValidationException(
-                    "Order must contain at least one item"
-            );
-        }
-
-        Map<Long, Long> consolidatedItems = orderItemRequests.stream()
-                .filter(req ->
-                        req.getWarehouseItemId() != null && req.getQuantity() != null
-                )
-                .collect(Collectors.groupingBy(
-                        OrderItemRequest::getWarehouseItemId,
-                        Collectors.summingLong(OrderItemRequest::getQuantity)
-                ));
-
         WarehouseOrder warehouseOrder = new WarehouseOrder();
         warehouseOrder.setWarehouse(warehouse);
         warehouseOrder.setWarehouseContractor(contractor);
         warehouseOrder.setWarehouseOrderStatus(WarehouseOrderStatus.WAITING);
 
-        consolidatedItems.forEach((itemId, quantity) -> {
-            if (quantity <= 0) {
+        if (outbound) {
+            warehouseOrder.setWarehouseOrderType(WarehouseOrderType.OUTBOUND);
+
+            if (orderItemRequests == null || orderItemRequests.isEmpty()) {
                 throw new BusinessValidationException(
-                        "Quantity must be greater than zero"
+                        "Order must contain at least one item"
                 );
             }
 
-            WarehouseItem warehouseItem =
-                    warehouseItemService.getItemByIdAndWarehouseId(
-                            itemId,
-                            warehouseId,
-                            currentUser
+            Map<Long, Long> consolidatedItems = orderItemRequests.stream()
+                    .filter(req ->
+                            req.getWarehouseItemId() != null && req.getQuantity() != null
+                    )
+                    .collect(Collectors.groupingBy(
+                            OrderItemRequest::getWarehouseItemId,
+                            Collectors.summingLong(OrderItemRequest::getQuantity)
+                    ));
+
+            consolidatedItems.forEach((itemId, quantity) -> {
+                if (quantity <= 0) {
+                    throw new BusinessValidationException(
+                            "Quantity must be greater than zero"
                     );
+                }
 
-            WarehouseOrderItem warehouseOrderItem = new WarehouseOrderItem();
-            warehouseOrderItem.setWarehouseOrder(warehouseOrder);
-            warehouseOrderItem.setWarehouseItem(warehouseItem);
-            warehouseOrderItem.setOrderedQuantity(quantity);
+                WarehouseItem warehouseItem =
+                        warehouseItemService.getItemByIdAndWarehouseId(
+                                itemId,
+                                warehouseId,
+                                currentUser
+                        );
 
-            warehouseOrder.getWarehouseOrderItems().add(warehouseOrderItem);
-        });
+                WarehouseOrderItem warehouseOrderItem = new WarehouseOrderItem();
+                warehouseOrderItem.setWarehouseOrder(warehouseOrder);
+                warehouseOrderItem.setWarehouseItem(warehouseItem);
+                warehouseOrderItem.setOrderedQuantity(quantity);
+
+                warehouseOrder.getWarehouseOrderItems().add(warehouseOrderItem);
+            });
+        } else {
+            warehouseOrder.setWarehouseOrderType(WarehouseOrderType.INBOUND);
+        }
+
+        if (additionalInfo != null && !additionalInfo.isEmpty()) {
+            warehouseOrder.setAdditionalInfo(additionalInfo);
+        }
 
         warehouseOrderRepository.save(warehouseOrder);
     }
@@ -129,7 +145,7 @@ public class WarehouseOrderService {
             WarehouseOrderStatus newStatus,
             User currentUser
     ) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         WarehouseOrder order =
                 getOrderById(orderId, warehouseId, currentUser);
@@ -142,28 +158,10 @@ public class WarehouseOrderService {
 
     @Transactional
     public void deleteOrder(Long warehouseId, Long orderId, User currentUser) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         WarehouseOrder order = getOrderById(orderId, warehouseId, currentUser);
 
         warehouseOrderRepository.delete(order);
-    }
-
-    private void validateReadAccess(Long warehouseId, User currentUser) {
-        if (!warehouseService.hasAccess(warehouseId, currentUser.getId(), false)) {
-            throw new ResourceAccessException(
-                    "You are not permitted to perform" +
-                            " modifications in this warehouse"
-            );
-        }
-    }
-
-    private void validateWriteAccess(Long warehouseId, User currentUser) {
-        if (!warehouseService.hasAccess(warehouseId, currentUser.getId(), true)) {
-            throw new ResourceAccessException(
-                    "You are not permitted to perform" +
-                            " modifications in this warehouse"
-            );
-        }
     }
 }

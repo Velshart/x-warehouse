@@ -6,6 +6,7 @@ import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.*;
 import me.mmtr.xwarehouse.model.dto.OrderItemRequest;
 import me.mmtr.xwarehouse.model.enums.WarehouseOrderStatus;
+import me.mmtr.xwarehouse.model.enums.WarehouseOrderType;
 import me.mmtr.xwarehouse.repository.WarehouseOrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -47,7 +48,8 @@ public class WarehouseOrderServiceTests {
 
     private Warehouse testWarehouse;
     private User currentUser;
-    private WarehouseOrder testOrder;
+    private WarehouseOrder testOrderInbound;
+    private WarehouseOrder testOrderOutbound;
     private WarehouseContractor testContractor;
 
     @BeforeEach
@@ -64,51 +66,50 @@ public class WarehouseOrderServiceTests {
         testContractor.setId(3L);
         testContractor.setWarehouse(testWarehouse);
 
-        testOrder = new WarehouseOrder();
-        testOrder.setId(4L);
-        testOrder.setWarehouse(testWarehouse);
-        testOrder.setWarehouseContractor(testContractor);
-        testOrder.setWarehouseOrderStatus(WarehouseOrderStatus.WAITING);
+        testOrderInbound = new WarehouseOrder();
+        testOrderInbound.setId(4L);
+        testOrderInbound.setWarehouse(testWarehouse);
+        testOrderInbound.setWarehouseContractor(testContractor);
+        testOrderInbound.setWarehouseOrderStatus(WarehouseOrderStatus.WAITING);
+        testOrderInbound.setWarehouseOrderType(WarehouseOrderType.INBOUND);
+
+        testOrderOutbound = new WarehouseOrder();
+        testOrderOutbound.setId(5L);
+        testOrderOutbound.setWarehouse(testWarehouse);
+        testOrderOutbound.setWarehouseContractor(testContractor);
+        testOrderOutbound.setWarehouseOrderStatus(WarehouseOrderStatus.WAITING);
+        testOrderOutbound.setWarehouseOrderType(WarehouseOrderType.OUTBOUND);
     }
 
     @Nested
     class GetOrderByIdTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfOrderIsCorrectlyReturned() {
             when(warehouseOrderRepository.findByIdAndWarehouseId(
-                    testOrder.getId(),
+                    testOrderInbound.getId(),
                     testWarehouse.getId())
-            ).thenReturn(Optional.of(testOrder));
+            ).thenReturn(Optional.of(testOrderInbound));
 
             WarehouseOrder order = warehouseOrderService.getOrderById(
-                    testOrder.getId(), testWarehouse.getId(), currentUser
+                    testOrderInbound.getId(), testWarehouse.getId(), currentUser
             );
 
             assertNotNull(order);
-            assertEquals(testOrder.getId(), order.getId());
+            assertEquals(testOrderInbound.getId(), order.getId());
         }
 
         @Test
         void verifyIfExceptionIsThrownWhenNoReadAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateReadAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex =
                     assertThrows(ResourceAccessException.class, () ->
                             warehouseOrderService.getOrderById(
-                                    testOrder.getId(),
+                                    testOrderInbound.getId(),
                                     testWarehouse.getId(),
                                     currentUser
                             ));
@@ -120,14 +121,14 @@ public class WarehouseOrderServiceTests {
         @Test
         void verifyIfExceptionIsThrownWhenOrderNotFound() {
             when(warehouseOrderRepository.findByIdAndWarehouseId(
-                    testOrder.getId(),
+                    testOrderInbound.getId(),
                     testWarehouse.getId())
             ).thenReturn(Optional.empty());
 
             ResourceNotFoundException ex =
                     assertThrows(ResourceNotFoundException.class, () ->
                             warehouseOrderService.getOrderById(
-                                    testOrder.getId(),
+                                    testOrderInbound.getId(),
                                     testWarehouse.getId(),
                                     currentUser
                             ));
@@ -143,39 +144,61 @@ public class WarehouseOrderServiceTests {
     class GetOrdersByWarehouseIdAndContractorIdTests {
         @Test
         void verifyIfOrdersAreCorrectlyReturned() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
+            when(warehouseOrderRepository
+                    .findAllByWarehouseIdAndWarehouseContractorIdAndWarehouseOrderType(
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            WarehouseOrderType.INBOUND
+                    )).thenReturn(List.of(testOrderInbound));
 
-            when(warehouseOrderRepository.findAllByWarehouseIdAndWarehouseContractorId(
-                    testWarehouse.getId(), testContractor.getId()
-            )).thenReturn(List.of(testOrder));
+            when(warehouseOrderRepository
+                    .findAllByWarehouseIdAndWarehouseContractorIdAndWarehouseOrderType(
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            WarehouseOrderType.OUTBOUND
+                    )).thenReturn(List.of(testOrderOutbound));
 
-            List<WarehouseOrder> orders =
+            List<WarehouseOrder> inboundOrders =
                     warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
-                            testWarehouse.getId(), testContractor.getId(), currentUser
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            currentUser,
+                            false
                     );
 
-            assertEquals(1, orders.size());
-            assertEquals(testOrder.getId(), orders.getFirst().getId());
+            assertEquals(1, inboundOrders.size());
+            assertEquals(testOrderInbound.getId(), inboundOrders.getFirst().getId());
+
+            List<WarehouseOrder> outboundOrders =
+                    warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            currentUser,
+                            true
+                    );
+
+            assertEquals(1, outboundOrders.size());
+            assertEquals(
+                    testOrderOutbound.getId(),
+                    outboundOrders.getFirst().getId()
+            );
         }
 
         @Test
         void verifyIfExceptionIsThrownWhenNoReadAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateReadAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex =
                     assertThrows(ResourceAccessException.class, () ->
                             warehouseOrderService.getOrdersByWarehouseIdAndContractorId(
                                     testWarehouse.getId(),
                                     testContractor.getId(),
-                                    currentUser
+                                    currentUser,
+                                    false
                             ));
 
             assertEquals(
@@ -214,16 +237,10 @@ public class WarehouseOrderServiceTests {
             duplicateOrderItemRequest = new OrderItemRequest();
             duplicateOrderItemRequest.setWarehouseItemId(warehouseItem1.getId());
             duplicateOrderItemRequest.setQuantity(2L);
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
         }
 
         @Test
-        void verifyIfNewOrderIsSavedCorrectly() {
+        void verifyIfNewOutboundOrderIsSavedCorrectly() {
 
             when(warehouseService.getWarehouseByIdAndUser(
                     testWarehouse.getId(),
@@ -257,10 +274,13 @@ public class WarehouseOrderServiceTests {
                             orderItemRequest2,
                             duplicateOrderItemRequest
                     ),
+                    true,
+                    null,
                     currentUser
             );
 
-            verify(warehouseOrderRepository).save(warehouseOrderCaptor.capture());
+            verify(warehouseOrderRepository, times(1))
+                    .save(warehouseOrderCaptor.capture());
             WarehouseOrder capturedOrder = warehouseOrderCaptor.getValue();
 
             assertEquals(
@@ -274,6 +294,10 @@ public class WarehouseOrderServiceTests {
             assertEquals(
                     WarehouseOrderStatus.WAITING,
                     capturedOrder.getWarehouseOrderStatus()
+            );
+            assertEquals(
+                    WarehouseOrderType.OUTBOUND,
+                    capturedOrder.getWarehouseOrderType()
             );
 
             List<WarehouseOrderItem> orderItems =
@@ -306,12 +330,64 @@ public class WarehouseOrderServiceTests {
         }
 
         @Test
-        void verifyIfExceptionIsThrownWhenNoWriteAccess() {
-            when(warehouseService.hasAccess(
+        void verifyIfNewInboundOrderIsSavedCorrectly() {
+            when(warehouseService.getWarehouseByIdAndUser(
                     testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(false);
+                    currentUser
+            )).thenReturn(testWarehouse);
+
+            when(warehouseContractorService.getContractorById(
+                    testWarehouse.getId(),
+                    testContractor.getId(),
+                    currentUser
+            )).thenReturn(testContractor);
+
+            warehouseOrderService.createOrder(
+                    testWarehouse.getId(),
+                    testContractor.getId(),
+                    List.of(
+                            orderItemRequest1,
+                            orderItemRequest2,
+                            duplicateOrderItemRequest
+                    ),
+                    false,
+                    null,
+                    currentUser
+            );
+
+            verify(warehouseOrderRepository, times(1))
+                    .save(warehouseOrderCaptor.capture());
+            WarehouseOrder capturedOrder = warehouseOrderCaptor.getValue();
+
+            assertEquals(
+                    testWarehouse.getId(),
+                    capturedOrder.getWarehouse().getId()
+            );
+            assertEquals(
+                    testContractor.getId(),
+                    capturedOrder.getWarehouseContractor().getId()
+            );
+            assertEquals(
+                    WarehouseOrderStatus.WAITING,
+                    capturedOrder.getWarehouseOrderStatus()
+            );
+            assertEquals(
+                    WarehouseOrderType.INBOUND,
+                    capturedOrder.getWarehouseOrderType()
+            );
+
+            List<WarehouseOrderItem> orderItems =
+                    capturedOrder.getWarehouseOrderItems();
+            assertEquals(0, orderItems.size());
+        }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenNoWriteAccess() {
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
                     warehouseOrderService.createOrder(
@@ -320,6 +396,8 @@ public class WarehouseOrderServiceTests {
                             List.of(
                                     orderItemRequest1
                             ),
+                            false,
+                            null,
                             currentUser
                     ));
 
@@ -332,7 +410,7 @@ public class WarehouseOrderServiceTests {
         }
 
         @Test
-        void verifyIfExceptionIsThrownWhenOrderItemRequestsIsEmptyOrNull() {
+        void verifyIfExceptionIsThrownWhenOrderItemRequestsIsEmptyOrNullForOutboundOrderButNotForInboundOrder() {
             when(warehouseService.getWarehouseByIdAndUser(
                     testWarehouse.getId(),
                     currentUser
@@ -351,6 +429,8 @@ public class WarehouseOrderServiceTests {
                                     testWarehouse.getId(),
                                     testContractor.getId(),
                                     null,
+                                    true,
+                                    null,
                                     currentUser
                             ));
 
@@ -365,6 +445,8 @@ public class WarehouseOrderServiceTests {
                                     testWarehouse.getId(),
                                     testContractor.getId(),
                                     Collections.emptyList(),
+                                    true,
+                                    null,
                                     currentUser
                             ));
 
@@ -374,10 +456,30 @@ public class WarehouseOrderServiceTests {
             );
 
             verify(warehouseOrderRepository, never()).save(any());
+
+            assertDoesNotThrow(() ->
+                    warehouseOrderService.createOrder(
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            Collections.emptyList(),
+                            false,
+                            null,
+                            currentUser
+                    ));
+
+            assertDoesNotThrow(() ->
+                    warehouseOrderService.createOrder(
+                            testWarehouse.getId(),
+                            testContractor.getId(),
+                            null,
+                            false,
+                            null,
+                            currentUser
+                    ));
         }
 
         @Test
-        void verifyIfExceptionIsThrownWhenItemAmountIsLessThanOrEqualToZero() {
+        void verifyIfExceptionIsThrownWhenItemAmountIsLessThanOrEqualToZeroForOutboundOrder() {
             when(warehouseService.getWarehouseByIdAndUser(
                     testWarehouse.getId(),
                     currentUser
@@ -400,6 +502,8 @@ public class WarehouseOrderServiceTests {
                                     List.of(
                                             orderItemRequest1
                                     ),
+                                    true,
+                                    null,
                                     currentUser
                             ));
 
@@ -416,6 +520,8 @@ public class WarehouseOrderServiceTests {
                                     List.of(
                                             orderItemRequest2
                                     ),
+                                    true,
+                                    null,
                                     currentUser
                             ));
 
@@ -430,32 +536,16 @@ public class WarehouseOrderServiceTests {
 
     @Nested
     class ChangeOrderStatusTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-        }
-
-
         @Test
         void verifyIfStatusIsCorrectlyChanged() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-
             when(warehouseOrderRepository.findByIdAndWarehouseId(
-                    testOrder.getId(),
+                    testOrderInbound.getId(),
                     testWarehouse.getId()
-            )).thenReturn(Optional.of(testOrder));
+            )).thenReturn(Optional.of(testOrderInbound));
 
             warehouseOrderService.changeOrderStatus(
                     testWarehouse.getId(),
-                    testOrder.getId(),
+                    testOrderInbound.getId(),
                     WarehouseOrderStatus.IN_PROGRESS,
                     currentUser
             );
@@ -466,7 +556,7 @@ public class WarehouseOrderServiceTests {
             ).save(warehouseOrderCaptor.capture());
 
             WarehouseOrder capturedOrder = warehouseOrderCaptor.getValue();
-            assertEquals(testOrder.getId(), capturedOrder.getId());
+            assertEquals(testOrderInbound.getId(), capturedOrder.getId());
             assertEquals(
                     WarehouseOrderStatus.IN_PROGRESS,
                     capturedOrder.getWarehouseOrderStatus()
@@ -475,21 +565,15 @@ public class WarehouseOrderServiceTests {
 
         @Test
         void verifyIfNothingIsSavedWhenStatusIsNotChanged() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-
             when(warehouseOrderRepository.findByIdAndWarehouseId(
-                    testOrder.getId(),
+                    testOrderInbound.getId(),
                     testWarehouse.getId()
-            )).thenReturn(Optional.of(testOrder));
+            )).thenReturn(Optional.of(testOrderInbound));
 
             warehouseOrderService.changeOrderStatus(
                     testWarehouse.getId(),
-                    testOrder.getId(),
-                    testOrder.getWarehouseOrderStatus(),
+                    testOrderInbound.getId(),
+                    testOrderInbound.getWarehouseOrderStatus(),
                     currentUser
             );
 
@@ -499,17 +583,17 @@ public class WarehouseOrderServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex =
                     assertThrows(ResourceAccessException.class, () ->
                             warehouseOrderService.changeOrderStatus(
                                     testWarehouse.getId(),
-                                    testOrder.getId(),
+                                    testOrderInbound.getId(),
                                     WarehouseOrderStatus.IN_PROGRESS,
                                     currentUser
                             ));
@@ -527,26 +611,14 @@ public class WarehouseOrderServiceTests {
 
         @Test
         void verifyIfOrderIsCorrectlyDeleted() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(warehouseOrderRepository.findByIdAndWarehouseId(
-                    testOrder.getId(),
+                    testOrderInbound.getId(),
                     testWarehouse.getId()
-            )).thenReturn(Optional.of(testOrder));
+            )).thenReturn(Optional.of(testOrderInbound));
 
             warehouseOrderService.deleteOrder(
                     testWarehouse.getId(),
-                    testOrder.getId(),
+                    testOrderInbound.getId(),
                     currentUser
             );
 
@@ -557,22 +629,22 @@ public class WarehouseOrderServiceTests {
 
             WarehouseOrder capturedOrder = warehouseOrderCaptor.getValue();
 
-            assertEquals(testOrder.getId(), capturedOrder.getId());
+            assertEquals(testOrderInbound.getId(), capturedOrder.getId());
         }
 
         @Test
         void verifyIfExceptionIsThrownWhenNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex =
                     assertThrows(ResourceAccessException.class, () ->
                             warehouseOrderService.deleteOrder(
                                     testWarehouse.getId(),
-                                    testOrder.getId(),
+                                    testOrderInbound.getId(),
                                     currentUser
                             )
                     );

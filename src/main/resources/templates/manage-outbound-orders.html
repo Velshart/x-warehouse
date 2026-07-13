@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Orders | ' + ${contractor.name} + ' | x-warehouse'">Orders Management</title>
+    <link th:href="@{/css/main.css}" rel="stylesheet"/>
+</head>
+<body class="min-h-screen bg-slate-900 text-slate-100 antialiased">
+
+<header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="h-9 w-9 rounded-lg bg-amber-500 flex items-center justify-center shadow-md shadow-amber-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5 text-slate-950">
+                    <path d="M19.006 3.705a.75.75 0 1 0-.512-1.41L6 6.838V3a.75.75 0 0 0-.75-.75h-1.5A.75.75 0 0 0 3 3v4.93l-1.006.365a.75.75 0 0 0 .512 1.41l16.5-6Z"/>
+                    <path fill-rule="evenodd"
+                          d="M3.019 11.114 18 5.667v3.421l4.006 1.457a.75.75 0 1 1-.512 1.41l-.494-.18v8.475h.75a.75.75 0 0 1 0 1.5H2.25a.75.75 0 0 1 0-1.5H3v-9.129l.019-.007ZM18 20.25v-9.566l1.5.546v9.02H18Zm-9-6a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3a.75.75 0 0 0 .75-.75V15a.75.75 0 0 0-.75-.75H9Z"
+                          clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <span class="text-lg font-bold tracking-wider text-white">x-warehouse</span>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div class="text-right hidden sm:block">
+                <p class="text-sm font-medium text-slate-200" th:text="${currentUser.username}">User</p>
+                <p class="text-xs text-slate-500">Logged in</p>
+            </div>
+            <form action="/logout" method="post" class="inline">
+                <button type="submit"
+                        class="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition duration-200">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div class="mb-6 space-y-3">
+        <div th:if="${success != null}"
+             class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl text-sm flex items-center space-x-2"
+             th:text="${success}">
+            Success message
+        </div>
+        <div th:if="${error != null}"
+             class="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm flex items-center space-x-2"
+             th:text="${error}">
+            Error message
+        </div>
+    </div>
+
+    <div class="mb-8">
+        <a th:href="@{/warehouse/{id}/contractors(id=${warehouseId})}"
+           class="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-amber-500 transition duration-150 mb-2">
+            <svg class="h-4 w-4 mr-1" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Back to Contractors Base
+        </a>
+        <h1 class="text-3xl font-bold text-white tracking-tight">Contractor Outbound Orders</h1>
+        <p class="text-sm text-slate-400 mt-1">
+            <span class="text-amber-500 font-mono font-semibold" th:text="${contractor.code}">Contractor Code</span> -
+            <span class="text-slate-200 font-medium" th:text="${contractor.name}">Contractor Name</span>
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+        <div class="lg:col-span-2 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-700/60 flex justify-between items-center bg-slate-800/50">
+                <span class="text-xs font-medium bg-slate-900 px-2.5 py-1 rounded-md text-slate-400 border border-slate-700"
+                      th:text="${#lists.size(orderList)} + ' Orders'">0 Orders</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                    <tr class="border-b border-slate-700 text-xs font-semibold text-slate-400 uppercase bg-slate-900/30">
+                        <th class="px-6 py-3.5">Status</th>
+                        <th class="px-6 py-3.5 text-center">Items Summary</th>
+                        <th class="px-6 py-3.5 text-center">Info</th>
+                        <th class="px-6 py-3.5 text-center">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/40 text-sm">
+                    <tr th:each="o : ${orderList}" class="hover:bg-slate-900/20 transition-colors">
+                        <td class="px-6 py-4">
+                            <span th:if="${o.warehouseOrderStatus.name() == 'WAITING'}"
+                                  class="px-2 py-1 text-xs font-semibold rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20" th:text="${o.warehouseOrderStatus.getLabel()}"></span>
+                            <span th:if="${o.warehouseOrderStatus.name() == 'IN_PROGRESS'}"
+                                  class="px-2 py-1 text-xs font-semibold rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20" th:text="${o.warehouseOrderStatus.getLabel()}"></span>
+                            <span th:if="${o.warehouseOrderStatus.name() == 'COMPLETED'}"
+                                  class="px-2 py-1 text-xs font-semibold rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" th:text="${o.warehouseOrderStatus.getLabel()}"></span>
+                            <span th:if="${o.warehouseOrderStatus.name() == 'CANCELLED'}"
+                                  class="px-2 py-1 text-xs font-semibold rounded-md bg-red-500/10 text-red-400 border border-red-500/20" th:text="${o.warehouseOrderStatus.getLabel()}"></span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button type="button"
+                                    th:onclick="'openItemsSummaryModal(' + ${o.id} + ')'"
+                                    class="inline-flex items-center space-x-1 px-2.5 py-1 text-xs font-medium bg-slate-700 hover:bg-amber-500 hover:text-slate-950 text-slate-300 rounded-lg transition duration-150 shadow-sm">
+                                <span th:text="${#lists.size(o.warehouseOrderItems)} + ' Positions'">0 Positions</span>
+                            </button>
+
+                            <div th:id="'order-items-data-' + ${o.id}" class="hidden">
+                                <div th:each="item : ${o.warehouseOrderItems}"
+                                     th:data-item-name="${item.warehouseItem.name}"
+                                     th:data-item-qty="${item.orderedQuantity}"
+                                     th:data-item-available="${item.warehouseItem.quantity >= item.orderedQuantity}"
+                                ></div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button type="button"
+                                    th:data-info="${o.additionalInfo}"
+                                    onclick="openInfoModal(this)"
+                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-slate-700 hover:bg-amber-500 hover:text-slate-950 text-slate-300 rounded-lg transition duration-150 shadow-sm">
+                                <span>Details</span>
+                            </button>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-3">
+                                <button type="button"
+                                        class="p-1 text-slate-500 hover:text-amber-500 transition block"
+                                        th:data-order-id="${o.id}"
+                                        th:data-status="${o.warehouseOrderStatus}"
+                                        onclick="openStatusModal(this)"
+                                        title="Change Status">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5"
+                                         stroke="currentColor" class="h-4 w-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/>
+                                    </svg>
+                                </button>
+                                <form th:action="@{/warehouse/{wId}/contractor-orders/{cId}/order/{oId}/delete(wId=${warehouseId}, cId=${contractor.id}, oId=${o.id}, outbound=true)}"
+                                      method="post" class="inline-flex items-center m-0 p-0"
+                                      onsubmit="return confirm('Delete this order entirely?')">
+                                    <button type="submit" class="p-1 text-slate-500 hover:text-red-400 transition block"
+                                            title="Delete Order">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(orderList)}">
+                        <td colspan="4" class="px-6 py-10 text-center text-sm text-slate-500">No registered orders found for this contractor.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl space-y-4">
+            <div>
+                <h3 class="text-lg font-bold text-white">Create Order</h3>
+            </div>
+
+            <form th:action="@{/warehouse/{wId}/contractor-orders/{cId}/create(wId=${warehouseId}, cId=${contractor.id}, outbound=true)}"
+                  method="post" class="space-y-4" id="orderCreationForm">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Contractor</label>
+                    <div class="w-full px-3.5 py-2.5 bg-slate-900/60 border border-slate-700/60 rounded-lg text-slate-300 text-sm font-medium">
+                        <span th:text="${contractor.name}">Contractor Name</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-slate-400">Items</label>
+                    <div id="dynamicItemsContainer" class="space-y-2">
+                    </div>
+                    <button type="button" onclick="addManifestItemRow()"
+                            class="mt-2 inline-flex items-center text-xs font-semibold text-amber-500 hover:text-amber-400 transition">
+                        + Add Position
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Additional Info</label>
+                    <textarea name="additionalInfo" rows="3" placeholder="Optional notes, delivery preferences..."
+                              class="block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-amber-500 transition resize-none"></textarea>
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2.5 text-sm font-semibold rounded-lg text-slate-950 bg-amber-500 hover:bg-amber-400 transition shadow-md">
+                    Create New Order
+                </button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<div id="statusModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-4">
+        <div>
+            <h3 class="text-md font-bold text-white">Change order status</h3>
+            <p class="text-xs text-slate-500">Pick the next step for this logistics operation.</p>
+        </div>
+        <form id="statusForm" th:action="@{_}" method="post" class="space-y-4">
+
+            <input type="hidden" name="outbound" value="true">
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Target State</label>
+                <select name="newStatus" id="modalStatusSelect"
+                        class="block w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-amber-500 transition">
+                    <option th:each="status : ${statuses}" th:value="${status}" th:text="${status.getLabel()}">STATUS</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeStatusModal()" class="px-4 py-2 text-sm bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-400 rounded-lg text-slate-950 font-semibold">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="summaryModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="flex justify-between items-start border-b border-slate-700 pb-3">
+            <h3 class="text-md font-bold text-white">Items Summary</h3>
+            <button type="button" onclick="closeSummaryModal()" class="text-slate-400 hover:text-white">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 max-h-60 overflow-y-auto">
+            <ul id="summaryItemsList" class="divide-y divide-slate-800 text-sm space-y-2"></ul>
+        </div>
+        <div class="flex justify-end">
+            <button type="button" onclick="closeSummaryModal()" class="px-4 py-2 text-sm bg-amber-500 text-slate-950 font-semibold rounded-lg">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="infoModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="flex justify-between items-start border-b border-slate-700 pb-3">
+            <h3 class="text-md font-bold text-white">Additional Information</h3>
+            <button type="button" onclick="closeInfoModal()" class="text-slate-400 hover:text-white">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 min-h-24 max-h-60 overflow-y-auto">
+            <p id="infoModalContent" class="text-sm text-slate-300 whitespace-pre-wrap"></p>
+        </div>
+        <div class="flex justify-end">
+            <button type="button" onclick="closeInfoModal()" class="px-4 py-2 text-sm bg-amber-500 text-slate-950 font-semibold rounded-lg">Close</button>
+        </div>
+    </div>
+</div>
+
+<select id="itemSelectTemplate" class="hidden">
+    <option value="" disabled selected>Item...</option>
+    <option th:each="item : ${itemList}" th:value="${item.id}" th:text="${item.name}">Item Name</option>
+</select>
+
+<script th:inline="javascript">
+    let manifestItemCount = 0;
+    const warehouseId = [[${warehouseId}]];
+    const contractorId = [[${contractor.id}]];
+
+    function addManifestItemRow() {
+        const container = document.getElementById('dynamicItemsContainer');
+        const templateSelect = document.getElementById('itemSelectTemplate').innerHTML;
+        const row = document.createElement('div');
+        row.className = "flex items-center space-x-2 bg-slate-900/40 p-2 rounded-lg border border-slate-700/50";
+        row.id = `manifest-row-${manifestItemCount}`;
+        row.innerHTML = `
+            <select name="itemRequests[${manifestItemCount}].warehouseItemId" required class="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-md text-xs text-white focus:outline-none focus:border-amber-500">
+                ${templateSelect}
+            </select>
+            <input type="number" name="itemRequests[${manifestItemCount}].quantity" required min="1" placeholder="Qty"
+                   class="w-20 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-md text-xs text-white text-center focus:outline-none focus:border-amber-500">
+            <button type="button" onclick="removeManifestItemRow('${row.id}')" class="p-1 text-slate-500 hover:text-red-400 transition">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+        `;
+        container.appendChild(row);
+        manifestItemCount++;
+    }
+
+    function removeManifestItemRow(id) {
+        document.getElementById(id).remove();
+    }
+
+    function openStatusModal(buttonElement) {
+        const orderId = buttonElement.getAttribute('data-order-id');
+        const currentStatus = buttonElement.getAttribute('data-status');
+        document.getElementById('statusForm').action = `/warehouse/${warehouseId}/contractor-orders/${contractorId}/order/${orderId}/change-status`;
+        document.getElementById('modalStatusSelect').value = currentStatus;
+        const modal = document.getElementById('statusModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { addManifestItemRow(); });
+    function closeStatusModal() { document.getElementById('statusModal').classList.replace('flex', 'hidden'); }
+    function closeSummaryModal() { document.getElementById('summaryModal').classList.replace('flex', 'hidden'); }
+
+    function openInfoModal(buttonElement) {
+        const info = buttonElement.getAttribute('data-info');
+        document.getElementById('infoModalContent').innerText = info && info.trim() !== '' ? info : 'No additional information provided.';
+        const modal = document.getElementById('infoModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeInfoModal() {
+        const modal = document.getElementById('infoModal');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+
+    function openItemsSummaryModal(orderId) {
+        const listContainer = document.getElementById('summaryItemsList');
+        listContainer.innerHTML = '';
+        const dataNodes = document.getElementById(`order-items-data-${orderId}`).children;
+        if (dataNodes.length === 0) listContainer.innerHTML = '<li class="text-slate-500 text-xs py-2 text-center">No positions listed.</li>';
+        for (let i = 0; i < dataNodes.length; i++) {
+            const name = dataNodes[i].getAttribute('data-item-name');
+            const qty = dataNodes[i].getAttribute('data-item-qty');
+            const isAvailable = dataNodes[i].getAttribute('data-item-available') === 'true';
+            const icon = isAvailable ?
+                `<svg class="h-4 w-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>` :
+                `<svg class="h-4 w-4 text-red-400 shrink-0" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
+            const li = document.createElement('li');
+            li.className = "flex justify-between items-center py-2 border-b border-slate-800/60";
+            li.innerHTML = `<div class="flex items-center space-x-2.5">${icon}<span class="font-medium text-slate-300">${name}</span></div><span class="font-mono text-xs text-amber-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">${qty} x</span>`;
+            listContainer.appendChild(li);
+        }
+        document.getElementById('summaryModal').classList.replace('hidden', 'flex');
+    }
+</script>
+</body>
+</html>
