@@ -33,16 +33,22 @@ public class WarehouseService {
     }
 
     public Warehouse getWarehouseByIdAndUser(Long warehouseId, User currentUser) {
+        validateReadAccess(warehouseId, currentUser);
+
         return warehouseRepository.findWarehouseByIdAndUserId(
                 warehouseId,
                 currentUser.getId()
-        ).orElseThrow(() -> new ResourceAccessException(
-                "Access denied"
+        ).orElseThrow(() -> new ResourceNotFoundException(
+                "Warehouse not found"
         ));
     }
 
     @Transactional
     public Warehouse createWarehouse(String name, User owner) {
+        String warehouseName = name.trim();
+        if (warehouseName.isEmpty()) {
+            throw new BusinessValidationException("Name cannot be empty");
+        }
         Warehouse warehouse = new Warehouse(name, owner);
 
         return warehouseRepository.save(warehouse);
@@ -65,25 +71,22 @@ public class WarehouseService {
             WarehouseRole role,
             User currentUser
     ) {
-        Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Warehouse with id " + warehouseId + " does not exist")
-                );
+        Warehouse warehouse = getWarehouseByIdAndUser(warehouseId, currentUser);
 
         if (!warehouse.getOwner().getId().equals(currentUser.getId())) {
             throw new ResourceAccessException(
-                    "Current user is not the owner of this warehouse"
+                    "This user is not the owner of this warehouse"
             );
         }
 
         User userToAddToWarehouse = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Username " + username + " does not exist"
+                        "User not found"
                 ));
 
         if (warehouse.getOwner().getId().equals(userToAddToWarehouse.getId())) {
             throw new BusinessValidationException(
-                    "User " + username + " is already an owner of this warehouse"
+                    "This user is already an owner of this warehouse"
             );
         }
 
@@ -91,7 +94,7 @@ public class WarehouseService {
                 .findByWarehouseIdAndUserId(warehouseId, userToAddToWarehouse.getId())
                 .ifPresent(m -> {
                     throw new BusinessValidationException(
-                            "User " + username + " is already a member " +
+                            "This user is already a member " +
                                     "of this warehouse"
                     );
                 });
@@ -108,13 +111,9 @@ public class WarehouseService {
             Long userId,
             User currentUser
     ) {
-        Warehouse warehouse = warehouseRepository
-                .findById(warehouseId).orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Warehouse with id " + warehouseId +
-                                        " does not exist"
-                        )
-                );
+        validateReadAccess(warehouseId, currentUser);
+
+        Warehouse warehouse = getWarehouseByIdAndUser(warehouseId, currentUser);
 
         if (userId.equals(warehouse.getOwner().getId())) {
             throw new BusinessValidationException(
@@ -155,12 +154,11 @@ public class WarehouseService {
 
     @Transactional
     public void updateWarehouse(Long warehouseId, String newName, User currentUser) {
-        Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found"));
+        Warehouse warehouse = getWarehouseByIdAndUser(warehouseId, currentUser);
 
         if (!warehouse.getOwner().getId().equals(currentUser.getId())) {
             throw new ResourceAccessException(
-                    "You are not permitted to perform this operation"
+                    "Current user is not the owner of this warehouse"
             );
         }
 
@@ -170,12 +168,7 @@ public class WarehouseService {
 
     @Transactional
     public void deleteWarehouse(Long warehouseId, User currentUser) {
-        Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Warehouse with id " + warehouseId + " does not exist"
-                        )
-                );
+        Warehouse warehouse = getWarehouseByIdAndUser(warehouseId, currentUser);
 
         if (!warehouse.getOwner().getId().equals(currentUser.getId())) {
             throw new ResourceAccessException(
@@ -211,5 +204,23 @@ public class WarehouseService {
 
                     return true;
                 }).orElse(false);
+    }
+
+    public void validateReadAccess(Long warehouseId, User currentUser) {
+        if (!hasAccess(warehouseId, currentUser.getId(), false)) {
+            throw new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            );
+        }
+    }
+
+    public void validateWriteAccess(Long warehouseId, User currentUser) {
+        if (!hasAccess(warehouseId, currentUser.getId(), true)) {
+            throw new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            );
+        }
     }
 }

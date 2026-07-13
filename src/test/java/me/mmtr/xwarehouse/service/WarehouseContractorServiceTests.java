@@ -60,12 +60,6 @@ public class WarehouseContractorServiceTests {
     class GetContractorsByWarehouseIdTests {
         @Test
         void verifyIfContractorsAreCorrectlyReturned() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-
             when(contractorRepository.findAllByWarehouseId(testWarehouse.getId()))
                     .thenReturn(List.of(testContractor));
 
@@ -81,8 +75,12 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceAccessExceptionIsThrownWhenNoReadAccess() {
-            when(warehouseService.hasAccess(testWarehouse.getId(), currentUser.getId(), false))
-                    .thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateReadAccess(testWarehouse.getId(), currentUser);
+
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
                     contractorService.getContractorsByWarehouseId(testWarehouse.getId(), currentUser)
@@ -97,15 +95,6 @@ public class WarehouseContractorServiceTests {
 
     @Nested
     class GetContractorByIdTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfContractorIsCorrectlyReturned() {
             when(contractorRepository.findByIdAndWarehouseId(
@@ -144,18 +133,20 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenNoReadAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateReadAccess(testWarehouse.getId(), currentUser);
 
-            ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
-                    contractorService.getContractorById(
-                            testWarehouse.getId(),
-                            testContractor.getId(),
-                            currentUser
-                    ));
+
+            ResourceAccessException ex =
+                    assertThrows(ResourceAccessException.class, () ->
+                            contractorService.getContractorById(
+                                    testWarehouse.getId(),
+                                    testContractor.getId(),
+                                    currentUser
+                            ));
 
             assertEquals("You are not permitted to perform" +
                     " modifications in this warehouse", ex.getMessage()
@@ -165,15 +156,6 @@ public class WarehouseContractorServiceTests {
 
     @Nested
     class AddContractorToWarehouseTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfNewContractorIsCorrectlyAddedToTheWarehouse() {
             when(warehouseService.getWarehouseByIdAndUser(testWarehouse.getId(), currentUser))
@@ -193,11 +175,12 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceAccessExceptionIsThrownWhenNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
+
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
                     contractorService.addContractorToWarehouse(
@@ -237,15 +220,6 @@ public class WarehouseContractorServiceTests {
 
     @Nested
     class RemoveContractorFromWarehouseTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfContractorIsCorrectlyRemoved() {
             when(contractorRepository.findByIdAndWarehouseId(
@@ -267,11 +241,12 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceAccessExceptionIsThrownWhenNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
+
 
             assertThrows(ResourceAccessException.class, () ->
                     contractorService.removeContractorFromWarehouse(
@@ -299,15 +274,6 @@ public class WarehouseContractorServiceTests {
 
     @Nested
     class UpdateContractorTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfContractorIsSuccessfullyUpdatedWithoutChangingNip() {
             when(contractorRepository.findByIdAndWarehouseId(
@@ -407,11 +373,11 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void verifyIfResourceAccessExceptionIsThrownWhenNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
                     contractorService.updateContractor(
@@ -462,15 +428,6 @@ public class WarehouseContractorServiceTests {
     @Nested
     class RemoveContractorFromWarehouse {
 
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfContractorIsCorrectlyRemoved() {
             when(contractorRepository.findByIdAndWarehouseId(testContractor.getId(), testWarehouse.getId()))
@@ -486,11 +443,12 @@ public class WarehouseContractorServiceTests {
 
         @Test
         void shouldThrowResourceAccessExceptionWhenNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
+
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
                     contractorService.removeContractorFromWarehouse(

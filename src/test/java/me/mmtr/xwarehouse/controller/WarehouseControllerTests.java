@@ -113,7 +113,7 @@ public class WarehouseControllerTests {
         void verifyIfWarehouseIsCorrectlyCreatedAndRedirectionOccurs() throws Exception {
             mockMvc.perform(post("/warehouse/create")
                             .with(user(currentUser)).param(
-                                    "name", " Warehouse 1 ")
+                                    "name", "Warehouse 1")
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/dashboard"))
@@ -127,33 +127,21 @@ public class WarehouseControllerTests {
         }
 
         @Test
-        void verifyIfErrorOccursWhenNameIsEmpty() throws Exception {
+        void verifyIfErrorRedirectionOccursWithErrorAttributeWhenExceptionIsThrown() throws Exception {
+            when(warehouseService.createWarehouse("  ", currentUser))
+                    .thenThrow(new BusinessValidationException(
+                            "Name cannot be empty"
+                    ));
+
             mockMvc.perform(post("/warehouse/create")
                             .with(user(currentUser))
                             .with(csrf())
-                            .param("name", "    "))
+                            .param("name", "  "))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/dashboard"))
                     .andExpect(flash().attribute(
                             "error",
                             "Name cannot be empty")
-                    );
-        }
-
-        @Test
-        void verifyIfErrorParamIsSetWhenExceptionWasThrown() throws Exception {
-            doThrow(new RuntimeException("Test exception")).when(warehouseService)
-                    .createWarehouse(anyString(), any(User.class));
-
-            mockMvc.perform(post("/warehouse/create")
-                            .param("name", "Warehouse 1")
-                            .with(user(currentUser))
-                            .with(csrf()))
-                    .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/dashboard"))
-                    .andExpect(flash().attribute(
-                            "error",
-                            "Test exception")
                     );
         }
     }
@@ -226,18 +214,22 @@ public class WarehouseControllerTests {
 
         @Test
         void verifyIfErrorParamIsSetWhenExceptionIsThrown() throws Exception {
-            doThrow(new RuntimeException("Test exception"))
-                    .when(warehouseService).deleteWarehouse(warehouse.getId(), currentUser);
+            doThrow(new ResourceAccessException(
+                    "Current user is not the owner of this warehouse"
+            )).when(warehouseService).deleteWarehouse(warehouse.getId(), currentUser);
 
             mockMvc.perform(post("/warehouse/delete")
-                            .param("warehouseId", String.valueOf(warehouse.getId()))
+                            .param(
+                                    "warehouseId",
+                                    String.valueOf(warehouse.getId())
+                            )
                             .with(user(currentUser))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/dashboard"))
                     .andExpect(flash().attribute(
                             "error",
-                            "Test exception")
+                            "Current user is not the owner of this warehouse")
                     );
         }
     }

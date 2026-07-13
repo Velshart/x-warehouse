@@ -2,7 +2,6 @@ package me.mmtr.xwarehouse.service;
 
 import jakarta.transaction.Transactional;
 import me.mmtr.xwarehouse.exception.BusinessValidationException;
-import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
@@ -31,14 +30,15 @@ public class WarehouseZoneService {
             Long zoneId,
             User currentUser
     ) {
-        validateReadAccess(warehouseId, currentUser);
+        //validateReadAccess(warehouseId, currentUser);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
 
         Warehouse warehouse
                 = warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
 
         WarehouseZone warehouseZone = zoneRepository.findById(zoneId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Zone with id " + zoneId + " does not exist"
+                        "Zone not found"
                 ));
 
         if (!warehouseZone.getWarehouse().getId().equals(warehouse.getId())) {
@@ -55,9 +55,8 @@ public class WarehouseZoneService {
             String keyword,
             User currentUser
     ) {
-        validateReadAccess(warehouseId, currentUser);
-//        // checks whether the provided user has the required permissions
-//        warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
+        //validateReadAccess(warehouseId, currentUser);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
 
         if (keyword == null || keyword.trim().isEmpty()) {
             return zoneRepository.findAllByWarehouseId(warehouseId);
@@ -73,8 +72,9 @@ public class WarehouseZoneService {
     public void addZone(Long warehouseId, String name, User currentUser) {
         Warehouse warehouse =
                 warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
+        //TODO: check ^
 
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         zoneRepository.findByWarehouseIdAndName(warehouseId, name)
                 .ifPresent(zone -> {
@@ -96,7 +96,7 @@ public class WarehouseZoneService {
             String newName,
             User currentUser
     ) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         WarehouseZone warehouseZone = zoneRepository.findById(zoneId)
                 .orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
@@ -113,7 +113,7 @@ public class WarehouseZoneService {
 
     @Transactional
     public void deleteZone(Long warehouseId, Long zoneId, User currentUser) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         WarehouseZone warehouseZone = zoneRepository.findById(zoneId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -127,27 +127,5 @@ public class WarehouseZoneService {
         }
 
         zoneRepository.delete(warehouseZone);
-    }
-
-    private void validateReadAccess(Long warehouseId, User currentUser) {
-        if (!warehouseService.hasAccess(warehouseId, currentUser.getId(), false)) {
-            throw new ResourceAccessException(
-                    "You are not permitted to perform" +
-                            " modifications in this warehouse"
-            );
-        }
-    }
-
-    private void validateWriteAccess(Long warehouseId, User currentUser) {
-        if (!warehouseService.hasAccess(
-                warehouseId,
-                currentUser.getId(),
-                true
-        )) {
-            throw new ResourceAccessException(
-                    "You are not permitted to perform" +
-                            " modifications in this warehouse"
-            );
-        }
     }
 }

@@ -2,7 +2,6 @@ package me.mmtr.xwarehouse.service;
 
 import jakarta.transaction.Transactional;
 import me.mmtr.xwarehouse.exception.BusinessValidationException;
-import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
@@ -36,7 +35,7 @@ public class WarehouseItemService {
             Long warehouseId,
             User currentUser
     ) {
-        validateReadAccess(warehouseId, currentUser);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
 
         Optional<WarehouseItem> itemOptional =
                 itemRepository.findByIdAndWarehouseZoneWarehouseId(
@@ -55,7 +54,7 @@ public class WarehouseItemService {
             Long warehouseId,
             User currentUser
     ) {
-        validateReadAccess(warehouseId, currentUser);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
         return itemRepository.findAllByWarehouseZoneWarehouseId(warehouseId);
     }
 
@@ -65,7 +64,7 @@ public class WarehouseItemService {
             String keyword,
             User currentUser
     ) {
-        validateReadAccess(warehouseId, currentUser);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
 
         if (keyword == null || keyword.trim().isEmpty()) {
             return itemRepository.findAllByWarehouseZoneId(zoneId);
@@ -85,7 +84,7 @@ public class WarehouseItemService {
             String sku,
             Long quantity,
             User currentUser) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         WarehouseZone zone =
                 zoneService.getZoneByIdAndUser(warehouseId, zoneId, currentUser);
@@ -117,7 +116,7 @@ public class WarehouseItemService {
             Long zoneId,
             User currentUser
     ) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         WarehouseItem item = itemRepository.findById(itemId)
                 .orElseThrow(() ->
@@ -159,7 +158,7 @@ public class WarehouseItemService {
         Warehouse warehouse =
                 warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
 
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         WarehouseItem warehouseItem = itemRepository.findById(itemId)
                 .orElseThrow(() ->
@@ -172,27 +171,5 @@ public class WarehouseItemService {
         }
 
         itemRepository.delete(warehouseItem);
-    }
-
-    private void validateReadAccess(Long warehouseId, User currentUser) {
-        if (!warehouseService.hasAccess(warehouseId, currentUser.getId(), false)) {
-            throw new ResourceAccessException(
-                    "You are not permitted to perform" +
-                            " modifications in this warehouse"
-            );
-        }
-    }
-
-    private void validateWriteAccess(Long warehouseId, User currentUser) {
-        if (!warehouseService.hasAccess(
-                warehouseId,
-                currentUser.getId(),
-                true
-        )) {
-            throw new ResourceAccessException(
-                    "You are not permitted to perform" +
-                            " modifications in this warehouse"
-            );
-        }
     }
 }

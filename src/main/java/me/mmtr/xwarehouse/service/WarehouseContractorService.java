@@ -2,7 +2,6 @@ package me.mmtr.xwarehouse.service;
 
 import jakarta.transaction.Transactional;
 import me.mmtr.xwarehouse.exception.BusinessValidationException;
-import me.mmtr.xwarehouse.exception.ResourceAccessException;
 import me.mmtr.xwarehouse.exception.ResourceNotFoundException;
 import me.mmtr.xwarehouse.model.User;
 import me.mmtr.xwarehouse.model.Warehouse;
@@ -31,7 +30,7 @@ public class WarehouseContractorService {
             Long warehouseId,
             User currentUser
     ) {
-        validateReadAccess(warehouseId, currentUser);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
         return contractorRepository.findAllByWarehouseId(warehouseId);
     }
 
@@ -40,7 +39,7 @@ public class WarehouseContractorService {
             Long contractorId,
             User currentUser
     ) {
-        validateReadAccess(warehouseId, currentUser);
+        warehouseService.validateReadAccess(warehouseId, currentUser);
 
         Optional<WarehouseContractor> contractorOptional =
                 contractorRepository.findByIdAndWarehouseId(
@@ -63,7 +62,7 @@ public class WarehouseContractorService {
             String additionalInfo,
             User currentUser
     ) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         Warehouse warehouse =
                 warehouseService.getWarehouseByIdAndUser(warehouseId, currentUser);
@@ -88,7 +87,7 @@ public class WarehouseContractorService {
             Long contractorId,
             User currentUser
     ) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
         WarehouseContractor contractor =
                 contractorRepository.findByIdAndWarehouseId(
                         contractorId, warehouseId
@@ -109,7 +108,7 @@ public class WarehouseContractorService {
             String additionalInfo,
             User currentUser
     ) {
-        validateWriteAccess(warehouseId, currentUser);
+        warehouseService.validateWriteAccess(warehouseId, currentUser);
 
         WarehouseContractor contractor =
                 contractorRepository
@@ -141,23 +140,5 @@ public class WarehouseContractorService {
         contractor.setWarehouse(warehouse);
 
         contractorRepository.save(contractor);
-    }
-
-    private void validateReadAccess(Long warehouseId, User currentUser) {
-        if (!warehouseService.hasAccess(warehouseId, currentUser.getId(), false)) {
-            throw new ResourceAccessException(
-                    "You are not permitted to perform" +
-                            " modifications in this warehouse"
-            );
-        }
-    }
-
-    private void validateWriteAccess(Long warehouseId, User currentUser) {
-        if (!warehouseService.hasAccess(warehouseId, currentUser.getId(), true)) {
-            throw new ResourceAccessException(
-                    "You are not permitted to perform" +
-                            " modifications in this warehouse"
-            );
-        }
     }
 }

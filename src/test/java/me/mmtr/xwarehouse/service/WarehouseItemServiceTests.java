@@ -66,15 +66,6 @@ public class WarehouseItemServiceTests {
     @Nested
     class getItemByIdAndWarehouseIdTests {
 
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfItemIsCorrectlyReturned() {
             when(itemRepository.findByIdAndWarehouseZoneWarehouseId(
@@ -91,11 +82,11 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenNoReadAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false)
-            ).thenReturn(false);
+            doThrow(new ResourceAccessException("You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService).validateReadAccess(
+                            testWarehouse.getId(),
+                            currentUser);
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class,
                     () -> itemService.getItemByIdAndWarehouseId(
@@ -134,16 +125,6 @@ public class WarehouseItemServiceTests {
 
     @Nested
     class GetItemsByWarehouseIdAndUserTests {
-
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfItemsAreCorrectlyReturnedWithValidKeywordParameter() {
             when(itemRepository.findAllByZoneIdAndNameOrSkuContaining(
@@ -209,19 +190,33 @@ public class WarehouseItemServiceTests {
                             testZone.getId()
                     );
         }
+
+        @Test
+        void verifyIfExceptionIsThrownWhenNoReadAccess() {
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateReadAccess(testWarehouse.getId(), currentUser);
+
+            ResourceAccessException ex = assertThrows(ResourceAccessException.class, () ->
+                    itemService.getItemsByWarehouseIdAndUser(
+                            testWarehouse.getId(),
+                            testZone.getId(),
+                            null,
+                            currentUser
+                    ));
+
+            assertEquals(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse",
+                    ex.getMessage()
+            );
+        }
     }
 
     @Nested
     class AddItemToZoneTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfNewItemIsSavedCorrectly() {
             when(zoneService.getZoneByIdAndUser(
@@ -272,11 +267,11 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class,
                     () -> itemService.addItemToZone(
@@ -306,12 +301,6 @@ public class WarehouseItemServiceTests {
         public void setup() {
             otherTestZone = new WarehouseZone("Zone B", testWarehouse);
             otherTestZone.setId(5L);
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
         }
 
         @Test
@@ -345,11 +334,11 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class,
                     () -> itemService.updateItemInZone(
@@ -470,15 +459,6 @@ public class WarehouseItemServiceTests {
 
     @Nested
     class RemoveItemFromZoneTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfItemIsDeletedCorrectly() {
             when(warehouseService.getWarehouseByIdAndUser(
@@ -498,11 +478,12 @@ public class WarehouseItemServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
+
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class,
                     () -> itemService.removeItemFromZone(

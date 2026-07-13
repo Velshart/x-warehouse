@@ -81,13 +81,7 @@ public class WarehouseController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            String warehouseName = name.trim();
-
-            if (warehouseName.isEmpty()) {
-                throw new IllegalArgumentException("Name cannot be empty");
-            }
-
-            warehouseService.createWarehouse(warehouseName, currentUser);
+            warehouseService.createWarehouse(name, currentUser);
             redirectAttributes.addFlashAttribute(
                     "success",
                     "Warehouse created successfully"

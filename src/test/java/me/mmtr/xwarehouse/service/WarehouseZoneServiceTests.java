@@ -53,15 +53,6 @@ public class WarehouseZoneServiceTests {
 
     @Nested
     class GetZoneByIdAndUserTests {
-        @BeforeEach
-        public void setUp() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
-        }
-
         @Test
         void verifyIfZoneIsReturnedCorrectly() {
             when(warehouseService
@@ -99,8 +90,7 @@ public class WarehouseZoneServiceTests {
                     );
 
             assertEquals(
-                    "Zone with id " + testZone.getId() +
-                    " does not exist",
+                    "Zone not found",
                     ex.getMessage()
             );
         }
@@ -133,11 +123,11 @@ public class WarehouseZoneServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenNoReadAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateReadAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex =
                     assertThrows(ResourceAccessException.class, () ->
@@ -163,12 +153,6 @@ public class WarehouseZoneServiceTests {
         public void setup() {
             secondTestZone = new WarehouseZone("Zone B", testWarehouse);
             secondTestZone.setId(4L);
-
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(true);
         }
 
         @Test
@@ -228,11 +212,11 @@ public class WarehouseZoneServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenNoReadAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    false
-            )).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateReadAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex =
                     assertThrows(ResourceAccessException.class, () ->
@@ -257,14 +241,6 @@ public class WarehouseZoneServiceTests {
                     .getWarehouseByIdAndUser(testWarehouse.getId(), currentUser)
             ).thenReturn(testWarehouse);
 
-            when(warehouseService
-                    .hasAccess(
-                            testWarehouse.getId(),
-                            currentUser.getId(),
-                            true
-                    )
-            ).thenReturn(true);
-
             when(zoneRepository
                     .findByWarehouseIdAndName(
                             testWarehouse.getId(),
@@ -288,11 +264,11 @@ public class WarehouseZoneServiceTests {
                     testWarehouse.getId(), currentUser))
                     .thenReturn(testWarehouse);
 
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class,
                     () -> zoneService.addZone(
@@ -316,12 +292,6 @@ public class WarehouseZoneServiceTests {
                     testWarehouse.getId(), currentUser)
             ).thenReturn(testWarehouse);
 
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(true);
-
             when(zoneRepository
                     .findByWarehouseIdAndName(
                             testWarehouse.getId(),
@@ -344,11 +314,6 @@ public class WarehouseZoneServiceTests {
     class UpdateZoneTests {
         @Test
         void verifyIfZoneIsUpdatedCorrectly() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(zoneRepository.findById(testZone.getId()))
                     .thenReturn(Optional.of(testZone));
 
@@ -366,11 +331,11 @@ public class WarehouseZoneServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex = assertThrows(ResourceAccessException.class,
                     () -> zoneService.updateZone(
@@ -391,11 +356,6 @@ public class WarehouseZoneServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenZoneDoesNotExist() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(zoneRepository.findById(testZone.getId()))
                     .thenReturn(Optional.empty());
 
@@ -414,11 +374,6 @@ public class WarehouseZoneServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenZoneBelongsToADifferentWarehouse() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             Warehouse otherWarehouse = new Warehouse(
                     "Other Warehouse", currentUser
             );
@@ -451,11 +406,6 @@ public class WarehouseZoneServiceTests {
     class DeleteZoneTests {
         @Test
         void verifyIfZoneIsDeletedCorrectly() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(zoneRepository.findById(testZone.getId()))
                     .thenReturn(Optional.of(testZone));
 
@@ -473,11 +423,11 @@ public class WarehouseZoneServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenUserHasNoWriteAccess() {
-            when(warehouseService.hasAccess(
-                    testWarehouse.getId(),
-                    currentUser.getId(),
-                    true)
-            ).thenReturn(false);
+            doThrow(new ResourceAccessException(
+                    "You are not permitted to perform" +
+                            " modifications in this warehouse"
+            )).when(warehouseService)
+                    .validateWriteAccess(testWarehouse.getId(), currentUser);
 
             ResourceAccessException ex =
                     assertThrows(ResourceAccessException.class, () ->
@@ -498,11 +448,6 @@ public class WarehouseZoneServiceTests {
 
         @Test
         void verifyIfExceptionIsThrownWhenZoneDoesNotExist() {
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
-
             when(zoneRepository.findById(testZone.getId()))
                     .thenReturn(Optional.empty());
 
@@ -528,11 +473,6 @@ public class WarehouseZoneServiceTests {
             alternativeWarehouse.setId(99L);
 
             testZone.setWarehouse(alternativeWarehouse);
-
-            when(warehouseService.hasAccess(testWarehouse.getId(),
-                    currentUser.getId(),
-                    true
-            )).thenReturn(true);
 
             when(zoneRepository.findById(testZone.getId()))
                     .thenReturn(Optional.of(testZone));
