@@ -10,7 +10,7 @@ A project of a WMS web application allowing to effectively manage multiple wareh
 *   **Contractor Management:** Maintain a directory of clients and suppliers.
 *   **Team & Access Control:** Assign system users to specific warehouses and manage access using a role hierarchy.
 
-### Backend
+### Tech stack
 *   **Java 21**
 *   **Spring Boot 3.x**
     *   Spring Data JPA (Data Access Layer / Hibernate)
