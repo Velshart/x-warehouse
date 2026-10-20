@@ -15,9 +15,10 @@ A project of a WMS web application allowing to effectively manage multiple wareh
 *   **Spring Boot 3.x**
     *   Spring Data JPA (Data Access Layer / Hibernate)
     *   Spring Security (Authentication & Authorization)
-    *   Spring Validation (Request and Entity validation)
+    *   Spring Validation (Request and Entity Validation)
     *   Spring Web (MVC Architecture)
     *   Thymeleaf (Template Engine)
+    *   Tailwind CSS (CSS Framework)
 
 ### Database
 *   **MySQL**
