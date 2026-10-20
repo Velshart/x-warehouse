@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "warehouse_contractors")
 public class WarehouseContractor {
@@ -43,6 +46,13 @@ public class WarehouseContractor {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id", nullable = false)
     private Warehouse warehouse;
+
+    @OneToMany(
+            mappedBy = "warehouseContractor",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private final List<WarehouseOrder> orders = new ArrayList<>();
 
     public WarehouseContractor() {}
 
